@@ -1,0 +1,13 @@
+{
+  "name": "recruitcrm-sync-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "sync": "node --env-file=../.env.local src/cli.js sync",
+    "sync:full": "node --env-file=../.env.local src/cli.js sync --full",
+    "outbox": "node --env-file=../.env.local src/cli.js outbox",
+    "outbox:live": "node --env-file=../.env.local src/cli.js outbox --live"
+  }
+}
