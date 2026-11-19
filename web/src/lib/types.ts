@@ -8,6 +8,7 @@ export interface CandidateRow {
 export interface Candidate extends CandidateRow {
   first_name: string | null; last_name: string | null; linkedin_url: string | null; notice_period: string | null
   current_salary: number | null; expected_salary: number | null; source: string | null; rc_id: string | null
+  raw?: { resume?: { filename: string; file_link: string } | null } | null
 }
 export interface Job {
   id: string; rc_id: string | null; name: string; status: string | null; company_name: string | null; company_rc_id: string | null

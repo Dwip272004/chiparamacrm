@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, ExternalLink, Mail, MapPin, MessageSquare, Pencil, Phone, Plus, Sparkles, X } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, FileText, Mail, MapPin, MessageSquare, Pencil, Phone, Plus, Sparkles, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useCandidate, useCandidateAssignments, useCandidateEnrichment, useNotes, useRpc, useStages, useTasks } from '../lib/api'
@@ -20,7 +20,7 @@ function Copy_({ text, icon: Icon, label }: { text: string; icon: typeof Mail; l
 }
 
 export default function CandidateDrawer({ id, onClose }: { id: string | null; onClose: () => void }) {
-  const [tab, setTab] = useState<'overview' | 'pipeline' | 'notes' | 'tasks'>('overview')
+  const [tab, setTab] = useState<'overview' | 'resume' | 'pipeline' | 'notes' | 'tasks'>('overview')
   const [edit, setEdit] = useState(false); const [pick, setPick] = useState(false)
   useEffect(() => { setTab('overview'); setEdit(false) }, [id])
   const { canWrite } = useAuth()
@@ -57,9 +57,9 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
               </div>
             </div>
             <div className="mt-4 flex gap-1">
-              {(['overview', 'pipeline', 'notes', 'tasks'] as const).map((t) => (
+              {(['overview', 'resume', 'pipeline', 'notes', 'tasks'] as const).map((t) => (
                 <button key={t} onClick={() => setTab(t)} className={cx('border-b-2 px-3 py-2 text-sm font-medium capitalize', tab === t ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>
-                  {t}{t === 'pipeline' && !!assigns.data?.length && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-600">{assigns.data.length}</span>}
+                  {t}{t === 'resume' && !!c.data.raw?.resume?.file_link && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand-600 align-middle" />}{t === 'pipeline' && !!assigns.data?.length && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-600">{assigns.data.length}</span>}
                 </button>
               ))}
             </div>
@@ -78,6 +78,11 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
             )}
             {tab === 'overview' && (edit ? <div className="rounded-xl border border-slate-200 bg-white p-5"><CandidateForm initial={c.data} onDone={() => setEdit(false)} /></div> : (
               <div className="space-y-4">
+                <Card title="Resume">
+                  {c.data.raw?.resume?.file_link ? (
+                    <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-brand-600" /><div className="min-w-0 flex-1 truncate text-sm text-slate-800">{c.data.raw.resume.filename}</div><Button size="sm" variant="secondary" onClick={() => setTab('resume')}>Preview</Button></div>
+                  ) : <div className="text-sm text-slate-500">No resume on file.</div>}
+                </Card>
                 {!!c.data.skills.length && <Card title="Skills"><div className="flex flex-wrap gap-1.5">{c.data.skills.map((s) => <Badge key={s} tone="brand">{s}</Badge>)}</div></Card>}
                 <Card title="Details">
                   <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
@@ -88,6 +93,7 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
                 </Card>
               </div>
             ))}
+            {tab === 'resume' && <ResumeTab resume={c.data.raw?.resume} />}
             {tab === 'pipeline' && <PipelineTab candidateId={c.data.id} />}
             {tab === 'notes' && <NotesTab candidateId={c.data.id} />}
             {tab === 'tasks' && <TasksTab candidateId={c.data.id} />}
@@ -179,6 +185,31 @@ export function TasksTab({ candidateId, jobId }: { candidateId?: string; jobId?:
         </div>
       ))}
       {tasks.data?.length === 0 && <div className="py-6 text-center text-sm text-slate-400">No open tasks.</div>}
+    </div>
+  )
+}
+
+function ResumeTab({ resume }: { resume?: { filename: string; file_link: string } | null }) {
+  if (!resume?.file_link) return <div className="rounded-xl border border-dashed border-slate-300 bg-white py-14 text-center text-sm text-slate-500">No resume on file for this candidate.</div>
+  const ext = (resume.filename.split('.').pop() ?? '').toLowerCase()
+  const kind = ext === 'pdf' ? 'pdf' : ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext) ? 'img' : 'none'
+  return (
+    <div className="flex h-full min-h-[420px] flex-col gap-3">
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <FileText className="h-5 w-5 shrink-0 text-brand-600" />
+        <div className="min-w-0 flex-1"><div className="truncate text-sm font-medium text-slate-800">{resume.filename}</div><div className="text-xs uppercase text-slate-400">{ext} · from RecruitCRM</div></div>
+        <a href={resume.file_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"><ExternalLink className="h-3.5 w-3.5" />New tab</a>
+        <a href={resume.file_link} download={resume.filename} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"><Download className="h-3.5 w-3.5" />Download</a>
+      </div>
+      {kind === 'pdf' && <iframe key={resume.file_link} title={resume.filename} src={resume.file_link} className="min-h-[560px] w-full flex-1 rounded-xl border border-slate-200 bg-white" />}
+      {kind === 'img' && <div className="flex-1 overflow-auto rounded-xl border border-slate-200 bg-white p-2"><img src={resume.file_link} alt={resume.filename} className="mx-auto max-w-full" /></div>}
+      {kind === 'none' && (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
+          <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+          <div className="text-sm font-medium text-slate-700">Preview isn't available for .{ext} files</div>
+          <div className="mt-1 text-xs text-slate-500">Browsers can only show PDFs and images inline. Use Download to open it in Word.</div>
+        </div>
+      )}
     </div>
   )
 }
