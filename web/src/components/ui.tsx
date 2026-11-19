@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { Check, Loader2, X } from 'lucide-react'
+import { BadgeCheck, Check, Loader2, X } from 'lucide-react'
 import { cx } from '../lib/util'
 
 export function Button({ variant = 'primary', size = 'md', loading, className, children, ...p }:
@@ -111,5 +111,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
     </ToastCtx.Provider>
+  )
+}
+
+// Instagram-style tick: blue = email AND phone on file, grey = only one, nothing = no contact details.
+export function Verified({ email, phone, className }: { email?: string | null; phone?: string | null; className?: string }) {
+  const e = !!email?.trim(), p = !!phone?.trim()
+  if (!e && !p) return null
+  const full = e && p
+  return (
+    <span title={full ? 'Verified contact: email and phone on file' : `Partial contact: only ${e ? 'email' : 'phone'} on file`} className={cx('inline-flex shrink-0', className)}>
+      <BadgeCheck className={cx('h-4 w-4 text-white', full ? 'fill-sky-500' : 'fill-slate-300')} />
+    </span>
   )
 }

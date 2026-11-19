@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useCandidate, useCandidateSearch, useChat, useRpc, type ChatMsg } from '../lib/api'
 import { ago, cx, place, useDebounced } from '../lib/util'
-import { Avatar, Badge, Button, Input, Spinner } from '../components/ui'
+import { Avatar, Badge, Button, Input, Spinner, Verified } from '../components/ui'
 import { useShell } from '../components/Shell'
 
 const dayLabel = (d: string) => new Date(d).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' })
@@ -133,7 +133,7 @@ function CandidatePanel({ id }: { id: string }) {
   const d = c.data
   return (
     <aside className="w-72 shrink-0 overflow-auto scroll-thin border-l border-slate-200 bg-white p-4">
-      <div className="flex items-center gap-3"><Avatar name={d.full_name} size={10} /><div className="min-w-0"><div className="truncate text-sm font-semibold text-slate-900">{d.full_name}</div><div className="truncate text-xs text-slate-500">{[d.current_position, d.current_organization].filter(Boolean).join(' at ')}</div></div></div>
+      <div className="flex items-center gap-3"><Avatar name={d.full_name} size={10} /><div className="min-w-0"><div className="flex items-center gap-1 text-sm font-semibold text-slate-900"><span className="truncate">{d.full_name}</span><Verified email={d.email} phone={d.phone} /></div><div className="truncate text-xs text-slate-500">{[d.current_position, d.current_organization].filter(Boolean).join(' at ')}</div></div></div>
       <div className="mt-3 space-y-1.5 text-xs text-slate-600">
         <div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-slate-400" />{d.email ?? <Badge tone="amber">no email</Badge>}</div>
         <div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-slate-400" />{d.phone ?? <Badge tone="amber">no phone</Badge>}</div>

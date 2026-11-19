@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, Plus, Search, Users } from 'lucide-react'
 import { useCandidateSearch } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { ago, cx, place, useDebounced } from '../lib/util'
-import { Avatar, Badge, Button, Empty, Input, Spinner, SyncBadge } from '../components/ui'
+import { Avatar, Badge, Button, Empty, Input, Spinner, SyncBadge, Verified } from '../components/ui'
 import { useShell } from '../components/Shell'
 import { PickJobModal } from '../components/AssignModal'
 
@@ -69,7 +69,7 @@ export default function Candidates() {
                 className={cx('cursor-pointer border-b border-slate-100 last:border-0 hover:bg-slate-50', cursor === i && 'bg-brand-50/60 outline outline-1 -outline-offset-1 outline-brand-500/40')}>
                 <td className="px-4" onClick={(e) => e.stopPropagation()}><input type="checkbox" checked={sel.has(c.id)} onChange={() => toggle(c.id)} className="h-4 w-4 rounded accent-[#4f46e5]" /></td>
                 <td className="py-2.5"><div className="flex items-center gap-3"><Avatar name={c.full_name} />
-                  <div className="min-w-0"><div className="flex items-center gap-1.5 font-medium text-slate-900">{c.full_name || 'Unnamed'}<SyncBadge status={c.sync_status} />{c.off_limit && <Badge tone="red">Off limit</Badge>}</div>
+                  <div className="min-w-0"><div className="flex items-center gap-1.5 font-medium text-slate-900">{c.full_name || 'Unnamed'}<Verified email={c.email} phone={c.phone} /><SyncBadge status={c.sync_status} />{c.off_limit && <Badge tone="red">Off limit</Badge>}</div>
                     <div className="truncate text-xs text-slate-500">{c.email || c.phone || '—'}</div></div></div></td>
                 <td className="max-w-[220px]"><div className="truncate text-slate-800">{c.current_position || '—'}</div><div className="truncate text-xs text-slate-500">{c.current_organization}</div></td>
                 <td className="text-slate-600">{place(c) || '—'}</td>

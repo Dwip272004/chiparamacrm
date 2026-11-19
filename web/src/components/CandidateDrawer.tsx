@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useCandidate, useCandidateAssignments, useCandidateEnrichment, useNotes, useRpc, useStages, useTasks } from '../lib/api'
 import { ago, fmtDate, money, place, cx } from '../lib/util'
-import { Avatar, Badge, Button, Drawer, Modal, Select, Spinner, SyncBadge, Textarea, useToast } from './ui'
+import { Avatar, Badge, Button, Drawer, Modal, Select, Spinner, SyncBadge, Textarea, Verified, useToast } from './ui'
 import CandidateForm from './CandidateForm'
 import { PickJobModal } from './AssignModal'
 import { useShell } from './Shell'
@@ -40,7 +40,7 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
             <div className="flex items-start gap-3">
               <Avatar name={c.data.full_name} size={11} />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2"><h2 className="truncate text-lg font-semibold text-slate-900">{c.data.full_name || 'Unnamed'}</h2><SyncBadge status={c.data.sync_status} />{c.data.off_limit && <Badge tone="red">Off limit</Badge>}</div>
+                <div className="flex items-center gap-2"><h2 className="truncate text-lg font-semibold text-slate-900">{c.data.full_name || 'Unnamed'}</h2><Verified email={c.data.email} phone={c.data.phone} /><SyncBadge status={c.data.sync_status} />{c.data.off_limit && <Badge tone="red">Off limit</Badge>}</div>
                 <div className="truncate text-sm text-slate-600">{[c.data.current_position, c.data.current_organization].filter(Boolean).join(' at ') || '—'}</div>
                 <div className="mt-1 flex flex-wrap items-center gap-0.5 -ml-2">
                   {c.data.email && <Copy_ text={c.data.email} icon={Mail} />}
