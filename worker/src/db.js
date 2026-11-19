@@ -57,3 +57,6 @@ export async function pendingRcIds(table, rcIds) {
   }
   return set;
 }
+
+// Calls a crm.* function (service role).
+export const rpc = (fn, args) => call(`/rpc/${fn}`, { method: 'POST', headers: headers(), body: JSON.stringify(args) });

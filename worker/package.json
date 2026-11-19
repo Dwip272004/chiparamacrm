@@ -9,6 +9,8 @@
     "sync:full": "node --env-file=../.env.local src/cli.js sync --full",
     "outbox": "node --env-file=../.env.local src/cli.js outbox",
     "outbox:live": "node --env-file=../.env.local src/cli.js outbox --live",
-    "export:linkedin": "node --env-file=../.env.local src/export-linkedin.js"
+    "export:linkedin": "node --env-file=../.env.local src/export-linkedin.js",
+    "skills:search": "node --env-file=../.env.local src/skills-backfill.js search",
+    "skills:apply": "node --env-file=../.env.local src/skills-backfill.js apply"
   }
 }
