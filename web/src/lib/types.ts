@@ -3,7 +3,7 @@ export interface Member { user_id: string; email: string; full_name: string | nu
 export interface CandidateRow {
   id: string; full_name: string; email: string | null; phone: string | null; current_position: string | null
   current_organization: string | null; city: string | null; state: string | null; country: string | null
-  skills: string[]; experience_years: number | null; rc_updated_at: string | null; sync_status: string; off_limit: boolean
+  skills: string[]; experience_years: number | null; rc_updated_at: string | null; sync_status: string; off_limit: boolean; has_resume?: boolean; has_linkedin?: boolean
 }
 export interface Candidate extends CandidateRow {
   first_name: string | null; last_name: string | null; linkedin_url: string | null; notice_period: string | null

@@ -12,11 +12,13 @@ const PAGE = 50
 export default function Candidates() {
   const shell = useShell(); const { canWrite } = useAuth()
   const [q, setQ] = useState(''); const [city, setCity] = useState(''); const [skill, setSkill] = useState('')
+  const [contact, setContact] = useState(''); const [hasSkills, setHasSkills] = useState(''); const [hasResume, setHasResume] = useState(''); const [hasLinkedin, setHasLinkedin] = useState('')
   const [page, setPage] = useState(0); const [sel, setSel] = useState<Set<string>>(new Set()); const [cursor, setCursor] = useState(-1)
   const [pick, setPick] = useState(false)
   const dq = useDebounced(q, 250), dc = useDebounced(city, 300), ds = useDebounced(skill, 300)
-  useEffect(() => { setPage(0); setCursor(-1) }, [dq, dc, ds])
-  const res = useCandidateSearch({ q: dq, city: dc, skill: ds, limit: PAGE, offset: page * PAGE })
+  useEffect(() => { setPage(0); setCursor(-1) }, [dq, dc, ds, contact, hasSkills, hasResume, hasLinkedin])
+  const res = useCandidateSearch({ q: dq, city: dc, skill: ds, contact, hasSkills, hasResume, hasLinkedin, limit: PAGE, offset: page * PAGE })
+  const filtered = !!(dq || dc || ds || contact || hasSkills || hasResume || hasLinkedin)
   const rows = res.data?.rows ?? []; const total = res.data?.total ?? 0
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function Candidates() {
   return (
     <div className="mx-auto max-w-7xl p-6">
       <div className="mb-4 flex items-end justify-between">
-        <div><h1 className="text-xl font-semibold text-slate-900">Candidates</h1><p className="text-sm text-slate-500">{res.isLoading ? 'Loading…' : `${total.toLocaleString()} ${dq || dc || ds ? 'matching' : 'in your database'}`}</p></div>
+        <div><h1 className="text-xl font-semibold text-slate-900">Candidates</h1><p className="text-sm text-slate-500">{res.isLoading ? 'Loading…' : `${total.toLocaleString()} ${filtered ? 'matching' : 'in your database'}`}</p></div>
         {canWrite && <Button onClick={shell.newCandidate}><Plus className="h-4 w-4" />New candidate</Button>}
       </div>
 
@@ -45,6 +47,23 @@ export default function Candidates() {
           <Input data-search autoFocus className="pl-9" placeholder="Search name, email, phone, title, company, skill…   ( / )" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <Input className="!w-44" placeholder="Location" value={city} onChange={(e) => setCity(e.target.value)} />
         <Input className="!w-40" placeholder="Skill" value={skill} onChange={(e) => setSkill(e.target.value)} />
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+          {([['', 'All'], ['verified', 'Verified'], ['partial', 'Partial'], ['none', 'No contact']] as const).map(([k, l]) => (
+            <button key={k} onClick={() => setContact(k)} className={cx('inline-flex items-center gap-1 rounded-md px-3 py-1 text-xs font-medium', contact === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')}>
+              {k === 'verified' && <Verified email="x" phone="x" />}{k === 'partial' && <Verified email="x" />}{l}
+            </button>))}
+        </div>
+        {([['Skills', hasSkills, setHasSkills], ['Resume', hasResume, setHasResume], ['LinkedIn', hasLinkedin, setHasLinkedin]] as const).map(([label, val, set]) => (
+          <select key={label} value={val} onChange={(e) => set(e.target.value)} className={cx('rounded-lg border py-1.5 pl-3 pr-7 text-xs font-medium', val ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-300 bg-white text-slate-600')}>
+            <option value="">{label}: any</option><option value="with">{label}: has</option><option value="without">{label}: missing</option>
+          </select>))}
+        <select value={contact === 'email' || contact === 'phone' || contact === 'missing' ? contact : ''} onChange={(e) => setContact(e.target.value)} className="rounded-lg border border-slate-300 bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-slate-600">
+          <option value="">Contact: specific…</option><option value="email">Has email</option><option value="phone">Has phone</option><option value="missing">Missing email or phone</option>
+        </select>
+        {filtered && <button onClick={() => { setQ(''); setCity(''); setSkill(''); setContact(''); setHasSkills(''); setHasResume(''); setHasLinkedin('') }} className="text-xs text-brand-600 hover:underline">Clear all filters</button>}
       </div>
 
       {sel.size > 0 && (
