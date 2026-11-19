@@ -9,6 +9,7 @@ import CandidateForm from './CandidateForm'
 import { PickJobModal } from './AssignModal'
 import { useShell } from './Shell'
 import { RichText } from './Rich'
+import DocxPreview from './DocxPreview'
 import { EnrichBadge, RequestForm } from './Enrichment'
 import SkillLookup from './SkillLookup'
 
@@ -98,7 +99,7 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
                 </Card>
               </div>
             ))}
-            {tab === 'resume' && <ResumeTab resume={c.data.raw?.resume} />}
+            {tab === 'resume' && <ResumeTab candidateId={c.data.id} resume={c.data.raw?.resume} />}
             {tab === 'pipeline' && <PipelineTab candidateId={c.data.id} />}
             {tab === 'notes' && <NotesTab candidateId={c.data.id} />}
             {tab === 'tasks' && <TasksTab candidateId={c.data.id} />}
@@ -195,10 +196,10 @@ export function TasksTab({ candidateId, jobId }: { candidateId?: string; jobId?:
   )
 }
 
-function ResumeTab({ resume }: { resume?: { filename: string; file_link: string } | null }) {
+function ResumeTab({ candidateId, resume }: { candidateId: string; resume?: { filename: string; file_link: string } | null }) {
   if (!resume?.file_link) return <div className="rounded-xl border border-dashed border-slate-300 bg-white py-14 text-center text-sm text-slate-500">No resume on file for this candidate.</div>
   const ext = (resume.filename.split('.').pop() ?? '').toLowerCase()
-  const kind = ext === 'pdf' ? 'pdf' : ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext) ? 'img' : 'none'
+  const kind = ext === 'pdf' ? 'pdf' : ext === 'docx' ? 'docx' : ['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext) ? 'img' : 'none'
   return (
     <div className="flex h-full min-h-[420px] flex-col gap-3">
       <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
@@ -208,12 +209,13 @@ function ResumeTab({ resume }: { resume?: { filename: string; file_link: string 
         <a href={resume.file_link} download={resume.filename} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"><Download className="h-3.5 w-3.5" />Download</a>
       </div>
       {kind === 'pdf' && <iframe key={resume.file_link} title={resume.filename} src={resume.file_link} className="min-h-[560px] w-full flex-1 rounded-xl border border-slate-200 bg-white" />}
+      {kind === 'docx' && <DocxPreview key={candidateId} candidateId={candidateId} />}
       {kind === 'img' && <div className="flex-1 overflow-auto rounded-xl border border-slate-200 bg-white p-2"><img src={resume.file_link} alt={resume.filename} className="mx-auto max-w-full" /></div>}
       {kind === 'none' && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
           <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300" />
           <div className="text-sm font-medium text-slate-700">Preview isn't available for .{ext} files</div>
-          <div className="mt-1 text-xs text-slate-500">Browsers can only show PDFs and images inline. Use Download to open it in Word.</div>
+          <div className="mt-1 text-xs text-slate-500">Old .doc files can't be shown in the browser. Use Download to open it in Word.</div>
         </div>
       )}
     </div>
