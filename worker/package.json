@@ -8,6 +8,7 @@
     "sync": "node --env-file=../.env.local src/cli.js sync",
     "sync:full": "node --env-file=../.env.local src/cli.js sync --full",
     "outbox": "node --env-file=../.env.local src/cli.js outbox",
-    "outbox:live": "node --env-file=../.env.local src/cli.js outbox --live"
+    "outbox:live": "node --env-file=../.env.local src/cli.js outbox --live",
+    "export:linkedin": "node --env-file=../.env.local src/export-linkedin.js"
   }
 }

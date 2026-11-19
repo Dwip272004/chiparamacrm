@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Copy, Download, ExternalLink, FileText, Mail, MapPin, MessageSquare, Pencil, Phone, Plus, Sparkles, X } from 'lucide-react'
+import { Check, Copy, Download, ExternalLink, FileText, Mail, MapPin, MessageSquare, Pencil, Phone, Plus, Search, Sparkles, X } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { useCandidate, useCandidateAssignments, useCandidateEnrichment, useNotes, useRpc, useStages, useTasks } from '../lib/api'
@@ -10,6 +10,7 @@ import { PickJobModal } from './AssignModal'
 import { useShell } from './Shell'
 import { RichText } from './Rich'
 import { EnrichBadge, RequestForm } from './Enrichment'
+import SkillLookup from './SkillLookup'
 
 function Copy_({ text, icon: Icon, label }: { text: string; icon: typeof Mail; label?: string }) {
   const toast = useToast()
@@ -28,6 +29,7 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
   const assigns = useCandidateAssignments(id ?? undefined)
   const enr = useCandidateEnrichment(id ?? undefined)
   const [reqOpen, setReqOpen] = useState(false)
+  const [lookup, setLookup] = useState(false)
   const navigate = useNavigate()
   const missing = !!c.data && (!c.data.email || !c.data.phone)
   const openReq = enr.data && (enr.data.status === 'pending' || enr.data.status === 'approved')
@@ -83,7 +85,10 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
                     <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-brand-600" /><div className="min-w-0 flex-1 truncate text-sm text-slate-800">{c.data.raw.resume.filename}</div><Button size="sm" variant="secondary" onClick={() => setTab('resume')}>Preview</Button></div>
                   ) : <div className="text-sm text-slate-500">No resume on file.</div>}
                 </Card>
-                {!!c.data.skills.length && <Card title="Skills"><div className="flex flex-wrap gap-1.5">{c.data.skills.map((s) => <Badge key={s} tone="brand">{s}</Badge>)}</div></Card>}
+                <Card title="Skills">
+                  {c.data.skills.length ? <div className="flex flex-wrap gap-1.5">{c.data.skills.map((s) => <Badge key={s} tone="brand">{s}</Badge>)}</div> : <div className="text-sm text-slate-500">No skills recorded.</div>}
+                  {canWrite && <Button size="sm" variant="secondary" className="mt-3" onClick={() => setLookup(true)}><Search className="h-3.5 w-3.5" />Look up skills</Button>}
+                </Card>
                 <Card title="Details">
                   <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                     <D k="Experience" v={c.data.experience_years != null ? `${c.data.experience_years} yrs` : null} /><D k="Notice period" v={c.data.notice_period} />
@@ -99,6 +104,7 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
             {tab === 'tasks' && <TasksTab candidateId={c.data.id} />}
           </div>
           <Modal open={reqOpen} onClose={() => setReqOpen(false)} title="Request enrichment"><RequestForm candidateId={c.data.id} name={c.data.full_name} hasEmail={!!c.data.email} hasPhone={!!c.data.phone} onDone={() => setReqOpen(false)} /></Modal>
+          <Modal open={lookup} onClose={() => setLookup(false)} title="Look up skills" wide>{lookup && <SkillLookup candidateId={c.data.id} name={c.data.full_name} existing={c.data.skills} onDone={() => setLookup(false)} />}</Modal>
           {pick && <PickJobModal candidateIds={[c.data.id]} onClose={() => setPick(false)} />}
         </>
       )}
