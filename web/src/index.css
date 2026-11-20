@@ -37,6 +37,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, [contentedita
   --color-sky-50: #0d2a3f; --color-sky-100: #10324a; --color-sky-200: #1c4b6b; --color-sky-600: #38bdf8; --color-sky-700: #7dd3fc;
   --color-violet-50: #241c45; --color-violet-500: #a78bfa; --color-violet-600: #a78bfa;
   --color-emerald-200: #1f5a45; --color-amber-200: #5b4715;
+  --color-orange-50: #2e1d0f; --color-orange-200: #5c3a14; --color-orange-700: #fdba74;
   --shadow-card: 0 1px 2px rgb(0 0 0 / .4); --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / .6);
 }
 

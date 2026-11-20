@@ -57,7 +57,7 @@ const jobs: any[] = [
   id: uid('j', i + 1), rc_id: `J${i}`, name, status, company_name: company, company_rc_id: null, city, state: null, country: city === 'San Jose' ? 'United States' : 'India',
   description: `<p>We are looking for a <b>${name}</b> to join ${company}.</p><ul><li>Own delivery end-to-end</li><li>Work with a friendly cross-functional team</li><li>Grow into a lead role</li></ul>`,
   work_mode: pick(['Hybrid', 'Onsite', 'Remote']), employment_type: 'Full time', openings: 1 + (i % 3), min_experience: 3, max_experience: 9, min_salary: 1500000, max_salary: 3000000,
-  skills, pipeline_id: pipeline, sync_status: 'synced', rc_updated_at: iso(i * 2 * day), created_at: iso(i * 5 * day), rc_created_at: iso(i * 5 * day),
+  skills, pipeline_id: pipeline, priority: ['urgent', 'high', 'normal', 'normal', 'high', 'low', 'normal', 'low', 'normal'][i], sync_status: 'synced', rc_updated_at: iso(i * 2 * day), created_at: iso(i * 5 * day), rc_created_at: iso(i * 5 * day),
 }))
 const jobCands: any[] = []
 candidates.slice(0, 46).forEach((c, i) => {
@@ -169,6 +169,7 @@ const rpcs: Record<string, (a: any) => any> = {
   enrichment_counts: () => ({ pending: 2, approved: 0, enriched: 1, not_found: 0, rejected: 0, mine_open: 1 }),
   chat_unread: () => 2,
   claim_membership: () => null,
+  set_job_priority: (a) => { const j = jobs.find((x) => x.id === a.p_id); if (j) j.priority = a.p_priority; return null },
   move_stage: (a) => { const jc = jobCands.find((x) => x.id === a.p_job_candidate); const st = stages.find((s) => s.id === a.p_stage); if (jc && st) { jc.stage_id = st.id; jc.stage_name = st.name; jc.stage_updated_at = new Date().toISOString() } return null },
   set_task_done: (a) => { const t = tasks.find((x) => x.id === a.p_id); if (t) t.status = a.p_done ? 'done' : 'open'; return null },
   send_message: (a) => { const c = candidates.find((x) => x.id === a.p_candidate); chat.push({ id: uid('m', chat.length + 1), author_id: ME, author_name: 'Dwip Lahare', body: a.p_body, candidate_id: c?.id ?? null, candidate_name: c?.full_name ?? null, reply_to: a.p_reply_to ?? null, created_at: new Date().toISOString() }); return null },

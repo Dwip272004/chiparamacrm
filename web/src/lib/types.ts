@@ -15,7 +15,7 @@ export interface Job {
   description: string | null; city: string | null; state: string | null; country: string | null; work_mode: string | null
   employment_type: string | null; openings: number | null; min_experience: number | null; max_experience: number | null
   min_salary: number | null; max_salary: number | null; skills: string[]; pipeline_id: string | null; sync_status: string
-  rc_updated_at: string | null; created_at: string
+  rc_updated_at: string | null; created_at: string; priority?: 'urgent' | 'high' | 'normal' | 'low'
 }
 export interface Stage { id: string; pipeline_id: string; name: string; sort_order: number; rc_stage_id: string }
 export interface JobCandidate {

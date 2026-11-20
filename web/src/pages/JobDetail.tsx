@@ -11,6 +11,7 @@ import { AddCandidatesModal } from '../components/AssignModal'
 import { NotesTab, TasksTab } from '../components/CandidateDrawer'
 import JobForm from '../components/JobForm'
 import { RichText } from '../components/Rich'
+import { PriorityPicker } from '../components/Priority'
 
 const STAGE_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316']
 
@@ -34,7 +35,7 @@ export default function JobDetail() {
           <div className="flex min-w-0 items-start gap-4">
             <Avatar name={j.company_name || j.name} size={12} className="!rounded-2xl" />
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2.5"><h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">{j.name}</h1><Badge tone={open ? 'green' : 'slate'} dot>{j.status}</Badge><SyncBadge status={j.sync_status} /></div>
+              <div className="flex flex-wrap items-center gap-2.5"><h1 className="truncate text-2xl font-semibold tracking-tight text-slate-900">{j.name}</h1><Badge tone={open ? 'green' : 'slate'} dot>{j.status}</Badge><PriorityPicker jobId={j.id} priority={j.priority} canEdit={canWrite} /><SyncBadge status={j.sync_status} /></div>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                 {j.company_name && <span className="inline-flex items-center gap-1.5"><Briefcase className="h-3.5 w-3.5 text-slate-400" />{j.company_name}</span>}
                 {place(j) && <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-slate-400" />{place(j)}</span>}
