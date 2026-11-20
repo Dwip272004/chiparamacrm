@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { ENRICH_KEYS, useCandidateSearch, useEnrichment, useEnrichmentEvents, useRpc, type EnrichmentReq } from '../lib/api'
 import { ago, cx, place, useDebounced } from '../lib/util'
-import { Avatar, Badge, Button, Empty, Input, Modal, Spinner } from '../components/ui'
+import { Avatar, Badge, Button, Card, Empty, Input, Modal, PageHeader, Segmented, Spinner } from '../components/ui'
 import { CompleteForm, DecideForm, EnrichBadge, RequestForm, Stepper } from '../components/Enrichment'
 import { useShell } from '../components/Shell'
 
@@ -33,24 +33,14 @@ export default function Enrichment() {
   const tabs: [Tab, string][] = [['action', isManager ? 'Needs action' : 'Open'], ['mine', 'My requests'], ['done', 'Completed'], ['all', 'All']]
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <div><h1 className="flex items-center gap-2 text-xl font-semibold text-slate-900"><Sparkles className="h-5 w-5 text-brand-600" />Enrichment</h1>
-          <p className="text-sm text-slate-500">Ask an admin to find missing email / phone. Everyone sees the status.</p></div>
-        {canWrite && <Button className="ml-auto" onClick={() => setModal({ kind: 'new' })}><Plus className="h-4 w-4" />New request</Button>}
-      </div>
-      <div className="mb-3 flex items-center gap-2">
-        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
-          {tabs.map(([k, l]) => (
-            <button key={k} onClick={() => setTab(k)} className={cx('rounded-md px-3 py-1 text-sm font-medium', tab === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800')}>
-              {l} <span className="ml-1 text-xs text-slate-400">{counts[k]}</span>
-            </button>
-          ))}
-        </div>
-        <div className="relative ml-auto w-60"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" /><Input className="pl-8" placeholder="Filter by candidate or requester" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+    <div className="mx-auto max-w-5xl px-8 py-7">
+      <PageHeader title="Enrichment" subtitle="Ask an admin to find missing email or phone. Everyone sees the status." actions={canWrite && <Button onClick={() => setModal({ kind: 'new' })}><Plus className="h-4 w-4" />New request</Button>} />
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Segmented value={tab} onChange={setTab} options={tabs.map(([k, l]) => ({ value: k, label: l, count: counts[k] }))} />
+        <div className="relative ml-auto w-64"><Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" /><Input className="pl-9" placeholder="Filter by candidate or requester" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
       </div>
       {q.isLoading ? <Spinner /> : shown.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white"><Empty icon={<Sparkles className="h-8 w-8" />} title={tab === 'action' ? 'Nothing waiting' : 'No requests here'} hint={canWrite ? 'Open a candidate with no email or phone and click “Request enrichment”.' : undefined} /></div>
+        <Card><Empty icon={<Sparkles />} title={tab === 'action' ? 'Nothing waiting' : 'No requests here'} hint={canWrite ? 'Open a candidate with no email or phone and click “Request enrichment”.' : undefined} /></Card>
       ) : (
         <div className="space-y-2">{shown.map((r) => <Row key={r.id} r={r} me={me} isManager={isManager} onReject={() => setModal({ kind: 'reject', r })} onComplete={() => setModal({ kind: 'complete', r })} />)}</div>
       )}
@@ -78,7 +68,7 @@ function Row({ r, me, isManager, onReject, onComplete }: { r: EnrichmentReq; me?
   const isOpen = open(r)
   const mine = r.requested_by === me
   return (
-    <div className={cx('rounded-xl border bg-white', r.priority === 'urgent' && isOpen ? 'border-amber-300' : 'border-slate-200')}>
+    <div className={cx('rounded-xl border bg-white shadow-card transition hover:shadow-pop', r.priority === 'urgent' && isOpen ? 'border-amber-300' : 'border-slate-200/80')}>
       <div className="flex items-start gap-3 p-4">
         <button onClick={() => setExp(!exp)} className="mt-1 text-slate-400">{exp ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</button>
         <Avatar name={c?.full_name} size={9} />

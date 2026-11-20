@@ -1,15 +1,44 @@
 @import "tailwindcss";
 
+/* Inter is loaded in index.html; fall back to system UI fonts. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --color-brand-50: #eef2ff; --color-brand-100: #e0e7ff; --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5; --color-brand-700: #4338ca;
+  --color-brand-50: #f1f2ff; --color-brand-100: #e4e6ff; --color-brand-200: #cdd1ff; --color-brand-300: #aab0ff;
+  --color-brand-400: #8186f7; --color-brand-500: #6366f1; --color-brand-600: #4f46e5; --color-brand-700: #4338ca; --color-brand-800: #3730a3;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / .04), 0 1px 3px rgb(16 24 40 / .05);
+  --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / .18), 0 2px 6px rgb(16 24 40 / .06);
+  --animate-pop: pop .16s ease-out; --animate-fade: fade .15s ease-out; --animate-slide: slide .22s cubic-bezier(.2,.8,.2,1);
+  @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.98) } to { opacity: 1; transform: none } }
+  @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slide { from { transform: translateX(32px); opacity: 0 } to { transform: none; opacity: 1 } }
 }
+
 html, body, #root { height: 100%; }
-body { @apply bg-slate-50 text-slate-800 antialiased; }
-kbd { @apply rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-500; }
-.scroll-thin::-webkit-scrollbar { width: 8px; height: 8px; }
-.scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+html { color-scheme: light; }
+body { @apply bg-slate-50 text-slate-700 antialiased; font-feature-settings: "cv11", "ss01"; letter-spacing: -0.006em; }
+::selection { background: color-mix(in srgb, var(--color-brand-500) 28%, transparent); }
+kbd { @apply rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-medium text-slate-500 shadow-[0_1px_0_rgb(16_24_40/.06)]; }
+.scroll-thin::-webkit-scrollbar { width: 10px; height: 10px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: var(--color-slate-300); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
+button, [role="button"], select { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; border-radius: 6px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, [contenteditable]:focus-visible { outline: none; }
+
+/* ---------- dark mode: remap the neutral + tint scales; every utility follows ---------- */
+.dark { color-scheme: dark;
+  --color-white: #151922; --color-black: #000;
+  --color-slate-50: #0e1117; --color-slate-100: #1a1f2a; --color-slate-200: #262c39; --color-slate-300: #353c4c; --color-slate-400: #697187;
+  --color-slate-500: #8d95a8; --color-slate-600: #aab1c2; --color-slate-700: #c6ccda; --color-slate-800: #dfe3ec; --color-slate-900: #f3f5fa;
+  --color-brand-50: #1c1f45; --color-brand-100: #262a63; --color-brand-200: #33388a; --color-brand-700: #a5abff; --color-brand-800: #c7caff;
+  --color-emerald-50: #0f2a22; --color-emerald-100: #123a2d; --color-emerald-600: #34d399; --color-emerald-700: #6ee7b7;
+  --color-amber-50: #2b2310; --color-amber-100: #3a2f12; --color-amber-600: #fbbf24; --color-amber-700: #fcd34d; --color-amber-800: #fde68a;
+  --color-red-50: #2e1519; --color-red-100: #3d1a1f; --color-red-200: #5c262d; --color-red-600: #f87171; --color-red-700: #fca5a5;
+  --color-sky-50: #0d2a3f; --color-sky-100: #10324a; --color-sky-200: #1c4b6b; --color-sky-600: #38bdf8; --color-sky-700: #7dd3fc;
+  --color-violet-50: #241c45; --color-violet-500: #a78bfa; --color-violet-600: #a78bfa;
+  --color-emerald-200: #1f5a45; --color-amber-200: #5b4715;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / .4); --shadow-pop: 0 16px 40px -8px rgb(0 0 0 / .6);
+}
 
 .rich { @apply text-sm leading-relaxed text-slate-700; overflow-wrap: anywhere; }
 .rich p, .rich div { @apply mb-2; }

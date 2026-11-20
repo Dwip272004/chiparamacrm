@@ -36,31 +36,39 @@ export default function CandidateForm({ initial, onDone }: { initial?: Candidate
   }
 
   return (
-    <form onSubmit={submit} className="space-y-4">
+    <form onSubmit={submit} className="space-y-6">
       {!!dup.data?.length && (
         <div className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
           <AlertTriangle className="h-4 w-4 shrink-0" />
           <div>Possible duplicate: {dup.data.map((d) => d.full_name).join(', ')} already has this email or phone.</div>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <Section title="Basics">
         <div><Label>First name</Label><Input autoFocus required={!f.last_name} value={f.first_name} onChange={set('first_name')} /></div>
         <div><Label>Last name</Label><Input value={f.last_name} onChange={set('last_name')} /></div>
-        <div><Label>Email</Label><Input type="email" value={f.email} onChange={set('email')} /></div>
-        <div><Label>Phone</Label><Input value={f.phone} onChange={set('phone')} /></div>
+        <div><Label>Email</Label><Input type="email" value={f.email} onChange={set('email')} placeholder="name@company.com" /></div>
+        <div><Label>Phone</Label><Input value={f.phone} onChange={set('phone')} placeholder="+91 98765 43210" /></div>
+        <div><Label>LinkedIn</Label><Input value={f.linkedin_url} onChange={set('linkedin_url')} placeholder="linkedin.com/in/…" /></div>
+        <div><Label>Source</Label><Input value={f.source} onChange={set('source')} placeholder="Referral, LinkedIn…" /></div>
+      </Section>
+      <Section title="Role & location">
         <div><Label>Current title</Label><Input value={f.current_position} onChange={set('current_position')} /></div>
         <div><Label>Current company</Label><Input value={f.current_organization} onChange={set('current_organization')} /></div>
         <div><Label>City</Label><Input value={f.city} onChange={set('city')} /></div>
         <div className="grid grid-cols-2 gap-3"><div><Label>State</Label><Input value={f.state} onChange={set('state')} /></div><div><Label>Country</Label><Input value={f.country} onChange={set('country')} /></div></div>
         <div className="col-span-2"><Label hint="comma separated">Skills</Label><Input value={f.skills} onChange={set('skills')} placeholder="React, Node.js, AWS" /></div>
+      </Section>
+      <Section title="Experience & compensation">
         <div><Label>Experience (years)</Label><Input type="number" step="0.5" value={f.experience_years} onChange={set('experience_years')} /></div>
-        <div><Label>Notice period</Label><Input value={f.notice_period} onChange={set('notice_period')} /></div>
+        <div><Label>Notice period</Label><Input value={f.notice_period} onChange={set('notice_period')} placeholder="30 days" /></div>
         <div><Label>Current salary</Label><Input type="number" value={f.current_salary} onChange={set('current_salary')} /></div>
         <div><Label>Expected salary</Label><Input type="number" value={f.expected_salary} onChange={set('expected_salary')} /></div>
-        <div><Label>LinkedIn</Label><Input value={f.linkedin_url} onChange={set('linkedin_url')} /></div>
-        <div><Label>Source</Label><Input value={f.source} onChange={set('source')} /></div>
-      </div>
-      <div className="flex justify-end gap-2 pt-1"><Button type="button" variant="secondary" onClick={() => onDone()}>Cancel</Button><Button type="submit" loading={save.isPending}>{initial ? 'Save changes' : 'Create candidate'}</Button></div>
+      </Section>
+      <div className="flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={() => onDone()}>Cancel</Button><Button type="submit" loading={save.isPending}>{initial ? 'Save changes' : 'Create candidate'}</Button></div>
     </form>
   )
 }
+
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <fieldset><legend className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{title}</legend><div className="grid grid-cols-2 gap-3">{children}</div></fieldset>
+)

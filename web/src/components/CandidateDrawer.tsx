@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import { useCandidate, useCandidateAssignments, useCandidateEnrichment, useNotes, useRpc, useStages, useTasks } from '../lib/api'
 import { ago, fmtDate, money, place, cx } from '../lib/util'
 import { Avatar, Badge, Button, Drawer, Modal, Select, Spinner, SyncBadge, Textarea, Verified, useToast } from './ui'
+import { Briefcase, Clock } from 'lucide-react'
 import CandidateForm from './CandidateForm'
 import { PickJobModal } from './AssignModal'
 import { useShell } from './Shell'
@@ -39,38 +40,46 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
     <Drawer open={!!id} onClose={onClose}>
       {!c.data ? <Spinner /> : (
         <>
-          <div className="border-b border-slate-200 px-6 pb-0 pt-5">
-            <div className="flex items-start gap-3">
-              <Avatar name={c.data.full_name} size={11} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2"><h2 className="truncate text-lg font-semibold text-slate-900">{c.data.full_name || 'Unnamed'}</h2><Verified email={c.data.email} phone={c.data.phone} /><SyncBadge status={c.data.sync_status} />{c.data.off_limit && <Badge tone="red">Off limit</Badge>}</div>
-                <div className="truncate text-sm text-slate-600">{[c.data.current_position, c.data.current_organization].filter(Boolean).join(' at ') || '—'}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-0.5 -ml-2">
-                  {c.data.email && <Copy_ text={c.data.email} icon={Mail} />}
-                  {c.data.phone && <Copy_ text={c.data.phone} icon={Phone} />}
-                  {place(c.data) && <span className="inline-flex items-center gap-1.5 px-2 text-xs text-slate-500"><MapPin className="h-3.5 w-3.5 text-slate-400" />{place(c.data)}</span>}
-                  {c.data.linkedin_url && <a href={c.data.linkedin_url.startsWith('http') ? c.data.linkedin_url : `https://${c.data.linkedin_url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-brand-600 hover:bg-brand-50"><ExternalLink className="h-3 w-3" />LinkedIn</a>}
-                </div>
-              </div>
-              <div className="flex gap-1.5">
-                <Button size="sm" variant="secondary" onClick={() => { onClose(); navigate(`/chat?ref=${c.data!.id}`) }}><MessageSquare className="h-3.5 w-3.5" />Discuss</Button>
-                {canWrite && <Button size="sm" variant="secondary" onClick={() => setPick(true)}><Plus className="h-3.5 w-3.5" />Add to job</Button>}
-                {canWrite && <Button size="sm" variant="secondary" onClick={() => { setEdit(true); setTab('overview') }}><Pencil className="h-3.5 w-3.5" />Edit</Button>}
-                <button onClick={onClose} className="rounded p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+          <div className="border-b border-slate-200/80 bg-white px-7 pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Candidate profile</span>
+              <div className="flex items-center gap-0.5">
+                <Button size="sm" variant="ghost" onClick={() => { onClose(); navigate(`/chat?ref=${c.data!.id}`) }}><MessageSquare className="h-3.5 w-3.5" />Discuss</Button>
+                {canWrite && <Button size="sm" variant="ghost" onClick={() => { setEdit(true); setTab('overview') }}><Pencil className="h-3.5 w-3.5" />Edit</Button>}
+                <button onClick={onClose} aria-label="Close" className="ml-1 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>
               </div>
             </div>
-            <div className="mt-4 flex gap-1">
+            <div className="mt-3 flex items-start gap-4">
+              <Avatar name={c.data.full_name} size={16} className="shadow-card" />
+              <div className="min-w-0 flex-1 pt-0.5">
+                <div className="flex items-center gap-2"><h2 className="truncate text-xl font-semibold tracking-tight text-slate-900">{c.data.full_name || 'Unnamed'}</h2><Verified email={c.data.email} phone={c.data.phone} className="[&>svg]:h-5 [&>svg]:w-5" /></div>
+                <div className="mt-0.5 truncate text-sm text-slate-600">{[c.data.current_position, c.data.current_organization].filter(Boolean).join(' at ') || '—'}</div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {place(c.data) && <Chip icon={MapPin}>{place(c.data)}</Chip>}
+                  {c.data.experience_years != null && <Chip icon={Briefcase}>{c.data.experience_years} yrs</Chip>}
+                  {c.data.notice_period && <Chip icon={Clock}>{c.data.notice_period}</Chip>}
+                  <SyncBadge status={c.data.sync_status} />{c.data.off_limit && <Badge tone="red" dot>Off limit</Badge>}
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {canWrite && <Button onClick={() => setPick(true)}><Plus className="h-4 w-4" />Add to job</Button>}
+              <LinkBtn href={c.data.email ? `mailto:${c.data.email}` : undefined} icon={Mail}>{c.data.email ? 'Email' : 'No email'}</LinkBtn>
+              <LinkBtn href={c.data.phone ? `tel:${c.data.phone.replace(/\s/g, '')}` : undefined} icon={Phone}>{c.data.phone ? 'Call' : 'No phone'}</LinkBtn>
+              {c.data.linkedin_url && <LinkBtn href={c.data.linkedin_url.startsWith('http') ? c.data.linkedin_url : `https://${c.data.linkedin_url}`} icon={ExternalLink} external>LinkedIn</LinkBtn>}
+            </div>
+            <div className="-mb-px mt-4 flex gap-1">
               {(['overview', 'resume', 'pipeline', 'notes', 'tasks'] as const).map((t) => (
-                <button key={t} onClick={() => setTab(t)} className={cx('border-b-2 px-3 py-2 text-sm font-medium capitalize', tab === t ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>
+                <button key={t} onClick={() => setTab(t)} className={cx('border-b-2 px-3 py-2.5 text-[13px] font-medium capitalize transition', tab === t ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>
                   {t}{t === 'resume' && !!c.data.raw?.resume?.file_link && <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-brand-600 align-middle" />}{t === 'pipeline' && !!assigns.data?.length && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-600">{assigns.data.length}</span>}
                 </button>
               ))}
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-auto scroll-thin bg-slate-50 p-6">
+          <div className="min-h-0 flex-1 overflow-auto scroll-thin bg-slate-50 p-7">
             {(missing || enr.data) && (
-              <div className="mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                <Sparkles className="h-4 w-4 shrink-0 text-brand-600" />
+              <div className="mb-4 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-600"><Sparkles className="h-4 w-4" /></div>
                 <div className="min-w-0 flex-1 text-sm text-slate-700">
                   {enr.data && (openReq || !missing || enr.data.status === 'not_found' || enr.data.status === 'rejected') ? (
                     <span className="flex flex-wrap items-center gap-2">Enrichment <EnrichBadge status={enr.data.status} />{enr.data.status === 'rejected' && enr.data.decision_note && <span className="text-xs text-slate-500">“{enr.data.decision_note}”</span>}<Link to="/enrichment" onClick={onClose} className="text-xs text-brand-600 hover:underline">View request</Link></span>
@@ -79,8 +88,15 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
                 {canWrite && missing && !openReq && <Button size="sm" onClick={() => setReqOpen(true)}>Request enrichment</Button>}
               </div>
             )}
-            {tab === 'overview' && (edit ? <div className="rounded-xl border border-slate-200 bg-white p-5"><CandidateForm initial={c.data} onDone={() => setEdit(false)} /></div> : (
+            {tab === 'overview' && (edit ? <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card"><CandidateForm initial={c.data} onDone={() => setEdit(false)} /></div> : (
               <div className="space-y-4">
+                <Card title="Contact">
+                  <div className="space-y-1">
+                    <ContactRow icon={Mail} label="Email" value={c.data.email} />
+                    <ContactRow icon={Phone} label="Phone" value={c.data.phone} />
+                    {c.data.linkedin_url && <ContactRow icon={ExternalLink} label="LinkedIn" value={c.data.linkedin_url} />}
+                  </div>
+                </Card>
                 <Card title="Resume">
                   {c.data.raw?.resume?.file_link ? (
                     <div className="flex items-center gap-3"><FileText className="h-5 w-5 text-brand-600" /><div className="min-w-0 flex-1 truncate text-sm text-slate-800">{c.data.raw.resume.filename}</div><Button size="sm" variant="secondary" onClick={() => setTab('resume')}>Preview</Button></div>
@@ -114,9 +130,27 @@ export default function CandidateDrawer({ id, onClose }: { id: string | null; on
 }
 
 const Card = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="rounded-xl border border-slate-200 bg-white p-4"><div className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</div>{children}</div>
+  <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card"><div className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{title}</div>{children}</div>
 )
-const D = ({ k, v }: { k: string; v?: string | null }) => <div><dt className="text-xs text-slate-500">{k}</dt><dd className="text-slate-800">{v || '—'}</dd></div>
+const D = ({ k, v }: { k: string; v?: string | null }) => <div><dt className="text-xs text-slate-500">{k}</dt><dd className="mt-0.5 font-medium text-slate-800">{v || '—'}</dd></div>
+const Chip = ({ icon: Icon, children }: { icon: typeof Mail; children: React.ReactNode }) => (
+  <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600"><Icon className="h-3 w-3 text-slate-400" />{children}</span>
+)
+function LinkBtn({ href, icon: Icon, children, external }: { href?: string; icon: typeof Mail; children: React.ReactNode; external?: boolean }) {
+  const cls = 'inline-flex h-9 items-center gap-1.5 rounded-lg border px-3.5 text-sm font-medium transition'
+  if (!href) return <span className={cx(cls, 'cursor-not-allowed border-dashed border-slate-200 text-slate-400')}><Icon className="h-4 w-4" />{children}</span>
+  return <a href={href} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})} className={cx(cls, 'border-slate-200 bg-white text-slate-700 shadow-card hover:border-slate-300 hover:bg-slate-50')}><Icon className="h-4 w-4 text-slate-500" />{children}</a>
+}
+function ContactRow({ icon: Icon, label, value }: { icon: typeof Mail; label: string; value?: string | null }) {
+  const toast = useToast()
+  return (
+    <div className="group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-slate-50">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500"><Icon className="h-4 w-4" /></div>
+      <div className="min-w-0 flex-1"><div className="text-[11px] text-slate-400">{label}</div><div className={cx('truncate text-sm', value ? 'font-medium text-slate-800' : 'text-slate-400')}>{value || 'Not on file'}</div></div>
+      {value && <button onClick={() => { void navigator.clipboard.writeText(value); toast(`Copied ${label.toLowerCase()}`) }} title="Copy" className="rounded-md p-1.5 text-slate-300 opacity-0 transition hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"><Copy className="h-4 w-4" /></button>}
+    </div>
+  )
+}
 
 function StageSelect({ a }: { a: { id: string; stage_id: string | null; jobs: { pipeline_id: string | null } } }) {
   const { canWrite } = useAuth()
@@ -168,7 +202,7 @@ export function NotesTab({ candidateId, jobId }: { candidateId?: string; jobId?:
         </div>
       )}
       {notes.isLoading ? <Spinner /> : notes.data?.map((n) => (
-        <div key={n.id} className="rounded-xl border border-slate-200 bg-white p-4">
+        <div key={n.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
           <div className="mb-1.5 flex items-center gap-2 text-xs text-slate-500"><b className="font-medium text-slate-700">{n.created_by_name || 'RecruitCRM'}</b>{n.note_type && <Badge>{n.note_type}</Badge>}<SyncBadge status={n.sync_status} /><span className="ml-auto">{ago(n.created_at)}</span></div>
           <RichText html={n.description} />
         </div>
