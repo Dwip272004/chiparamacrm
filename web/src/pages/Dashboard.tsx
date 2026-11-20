@@ -32,12 +32,14 @@ function Tile({ to, icon, n, text, tone = 'brand', sub }: { to?: string; icon: R
   return to ? <Link to={to}>{body}</Link> : body
 }
 
-function Bars({ rows, color = 'bg-brand-500' }: { rows: { k: string; n: number }[]; color?: string }) {
+function Bars({ rows, color = 'bg-brand-500', to }: { rows: { k: string; n: number }[]; color?: string; to?: (k: string) => string }) {
   const max = Math.max(1, ...rows.map((r) => r.n))
   if (!rows.length) return <div className="py-3 text-sm text-slate-400">Nothing to show yet.</div>
-  return <div className="space-y-2">{rows.map((r) => (
-    <div key={r.k}><div className="mb-0.5 flex justify-between text-xs"><span className="truncate pr-2 capitalize text-slate-600">{r.k}</span><span className="font-medium text-slate-800">{r.n.toLocaleString()}</span></div>
-      <div className="h-1.5 rounded-full bg-slate-100"><div className={cx('h-1.5 rounded-full', color)} style={{ width: `${(r.n / max) * 100}%` }} /></div></div>))}</div>
+  return <div className="space-y-1">{rows.map((r) => {
+    const inner = (<><div className="mb-0.5 flex justify-between text-xs"><span className="truncate pr-2 capitalize text-slate-600">{r.k}</span><span className="font-medium text-slate-800">{r.n.toLocaleString()}</span></div>
+      <div className="h-1.5 rounded-full bg-slate-100"><div className={cx('h-1.5 rounded-full', color)} style={{ width: `${(r.n / max) * 100}%` }} /></div></>)
+    return to ? <Link key={r.k} to={to(r.k)} title="Click to see these" className="-mx-2 block rounded-lg px-2 py-1 hover:bg-slate-50 hover:[&_span]:text-brand-700">{inner}</Link> : <div key={r.k}>{inner}</div>
+  })}</div>
 }
 
 function Spark({ data, color = '#6366f1' }: { data: { d: string; n: number }[]; color?: string }) {
@@ -112,11 +114,11 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card title="Pipeline by stage"><Bars rows={(s.by_stage ?? []).slice(0, 8).map((x: any) => ({ k: x.stage || 'No stage', n: x.n }))} /></Card>
-        <Card title="Jobs by status"><Bars color="bg-emerald-500" rows={(s.jobs_by_status ?? []).map((x: any) => ({ k: x.status, n: x.n }))} /></Card>
+        <Card title="Pipeline by stage"><Bars to={(k) => `/candidates?stage=${encodeURIComponent(k)}`} rows={(s.by_stage ?? []).slice(0, 8).map((x: any) => ({ k: x.stage || 'No stage', n: x.n }))} /></Card>
+        <Card title="Jobs by status"><Bars color="bg-emerald-500" to={(k) => `/jobs?status=${encodeURIComponent(k)}`} rows={(s.jobs_by_status ?? []).map((x: any) => ({ k: x.status, n: x.n }))} /></Card>
         <Card title="Team activity · 7 days" right={<Activity className="h-4 w-4 text-slate-300" />}>{i ? <Bars color="bg-sky-500" rows={i.leaderboard.map((x: any) => ({ k: x.name, n: x.n }))} /> : <Spinner />}</Card>
-        <Card title="Top skills in database">{i ? <Bars color="bg-violet-500" rows={i.top_skills.map((x: any) => ({ k: x.skill, n: x.n }))} /> : <Spinner />}</Card>
-        <Card title="Top locations">{i ? <Bars color="bg-amber-500" rows={i.top_locations.map((x: any) => ({ k: x.place, n: x.n }))} /> : <Spinner />}</Card>
+        <Card title="Top skills in database">{i ? <Bars color="bg-violet-500" to={(k) => `/candidates?skillx=${encodeURIComponent(k)}`} rows={i.top_skills.map((x: any) => ({ k: x.skill, n: x.n }))} /> : <Spinner />}</Card>
+        <Card title="Top locations">{i ? <Bars color="bg-amber-500" to={(k) => `/candidates?place=${encodeURIComponent(k)}`} rows={i.top_locations.map((x: any) => ({ k: x.place, n: x.n }))} /> : <Spinner />}</Card>
         <Card title="My tasks" right={<CalendarClock className="h-4 w-4 text-slate-300" />}>
           {mine.data?.slice(0, 6).map((t) => (
             <div key={t.id} className="flex items-center gap-3 border-b border-slate-100 py-2 last:border-0">

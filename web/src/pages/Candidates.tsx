@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Search, Users } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, Users, X } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { useCandidateSearch } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { ago, cx, place, useDebounced } from '../lib/util'
@@ -11,14 +12,18 @@ const PAGE = 50
 
 export default function Candidates() {
   const shell = useShell(); const { canWrite } = useAuth()
-  const [q, setQ] = useState(''); const [city, setCity] = useState(''); const [skill, setSkill] = useState('')
+  const [sp] = useSearchParams()
+  const [q, setQ] = useState(sp.get('q') ?? ''); const [city, setCity] = useState(sp.get('city') ?? ''); const [skill, setSkill] = useState(sp.get('skill') ?? '')
+  // exact drill-down filters (from dashboard clicks): shown as removable chips
+  const [stage, setStage] = useState(sp.get('stage') ?? ''); const [locExact, setLocExact] = useState(sp.get('place') ?? ''); const [skillExact, setSkillExact] = useState(sp.get('skillx') ?? '')
+  useEffect(() => { setQ(sp.get('q') ?? ''); setCity(sp.get('city') ?? ''); setSkill(sp.get('skill') ?? ''); setStage(sp.get('stage') ?? ''); setLocExact(sp.get('place') ?? ''); setSkillExact(sp.get('skillx') ?? '') }, [sp])
   const [contact, setContact] = useState(''); const [hasEmail, setHasEmail] = useState(''); const [hasPhone, setHasPhone] = useState(''); const [hasSkills, setHasSkills] = useState(''); const [hasResume, setHasResume] = useState(''); const [hasLinkedin, setHasLinkedin] = useState('')
   const [page, setPage] = useState(0); const [sel, setSel] = useState<Set<string>>(new Set()); const [cursor, setCursor] = useState(-1)
   const [pick, setPick] = useState(false)
   const dq = useDebounced(q, 250), dc = useDebounced(city, 300), ds = useDebounced(skill, 300)
-  useEffect(() => { setPage(0); setCursor(-1) }, [dq, dc, ds, contact, hasEmail, hasPhone, hasSkills, hasResume, hasLinkedin])
-  const res = useCandidateSearch({ q: dq, city: dc, skill: ds, contact, hasEmail, hasPhone, hasSkills, hasResume, hasLinkedin, limit: PAGE, offset: page * PAGE })
-  const filtered = !!(dq || dc || ds || contact || hasEmail || hasPhone || hasSkills || hasResume || hasLinkedin)
+  useEffect(() => { setPage(0); setCursor(-1) }, [dq, dc, ds, contact, hasEmail, hasPhone, hasSkills, hasResume, hasLinkedin, stage, locExact, skillExact])
+  const res = useCandidateSearch({ q: dq, city: dc, skill: ds, contact, hasEmail, hasPhone, hasSkills, hasResume, hasLinkedin, stage, place: locExact, skillExact, limit: PAGE, offset: page * PAGE })
+  const filtered = !!(dq || dc || ds || stage || locExact || skillExact || contact || hasEmail || hasPhone || hasSkills || hasResume || hasLinkedin)
   const rows = res.data?.rows ?? []; const total = res.data?.total ?? 0
 
   useEffect(() => {
@@ -49,6 +54,14 @@ export default function Candidates() {
         <Input className="!w-48" placeholder="Skills (a, b = both)" title="Separate several skills with commas: candidates must have all of them" value={skill} onChange={(e) => setSkill(e.target.value)} />
       </div>
 
+      {!!(stage || locExact || skillExact) && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {([['In stage', stage, setStage], ['Location', locExact, setLocExact], ['Skill', skillExact, setSkillExact]] as const).filter(([, v]) => v).map(([l, v, set]) => (
+            <span key={l} className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 py-1 pl-3 pr-2 text-xs font-medium text-white">{l}: <b className="font-semibold capitalize">{v}</b>
+              <button onClick={() => set('')} title="Remove filter" className="rounded-full p-0.5 hover:bg-white/20"><X className="h-3 w-3" /></button></span>))}
+        </div>
+      )}
+
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
           {([
@@ -63,7 +76,7 @@ export default function Candidates() {
           <select key={label} value={val} onChange={(e) => { if (label === 'Email' || label === 'Phone') setContact(''); set(e.target.value) }} className={cx('rounded-lg border py-1.5 pl-3 pr-7 text-xs font-medium', val ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-slate-300 bg-white text-slate-600')}>
             <option value="">{label}: any</option><option value="with">{label}: has</option><option value="without">{label}: missing</option>
           </select>))}
-        {filtered && <button onClick={() => { setQ(''); setCity(''); setSkill(''); setContact(''); setHasEmail(''); setHasPhone(''); setHasSkills(''); setHasResume(''); setHasLinkedin('') }} className="text-xs text-brand-600 hover:underline">Clear all filters</button>}
+        {filtered && <button onClick={() => { setQ(''); setCity(''); setSkill(''); setContact(''); setHasEmail(''); setHasPhone(''); setHasSkills(''); setHasResume(''); setHasLinkedin(''); setStage(''); setLocExact(''); setSkillExact('') }} className="text-xs text-brand-600 hover:underline">Clear all filters</button>}
       </div>
 
       {sel.size > 0 && (
