@@ -112,7 +112,7 @@ export const MenuItem = ({ icon, children, hint, onClick, danger }: { icon?: Rea
   </button>
 )
 
-export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean }) {
+export function Modal({ open, onClose, title, children, wide }: { open: boolean; onClose: () => void; title: string; children: ReactNode; wide?: boolean | 'xl' }) {
   useEffect(() => {
     if (!open) return
     const h = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -121,7 +121,7 @@ export function Modal({ open, onClose, title, children, wide }: { open: boolean;
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex animate-fade items-start justify-center overflow-y-auto bg-slate-900/40 p-4 pt-[7vh] backdrop-blur-[2px]" onMouseDown={onClose}>
-      <div className={cx('w-full animate-pop rounded-2xl border border-slate-200/70 bg-white shadow-pop', wide ? 'max-w-3xl' : 'max-w-lg')} onMouseDown={(e) => e.stopPropagation()}>
+      <div className={cx('w-full animate-pop rounded-2xl border border-slate-200/70 bg-white shadow-pop', wide === 'xl' ? 'max-w-6xl' : wide ? 'max-w-3xl' : 'max-w-lg')} onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 pb-1 pt-5">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><X className="h-4 w-4" /></button>

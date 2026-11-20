@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Briefcase, MapPin, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { BarChart3, Briefcase, MapPin, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useJobs, useJobStats } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { cx } from '../lib/util'
-import { Button, Empty, Input, PageHeader, Segmented, Spinner } from '../components/ui'
+import { Button, Empty, Input, Modal, PageHeader, Segmented, Spinner } from '../components/ui'
 import { useShell } from '../components/Shell'
 import JobCard from '../components/JobCard'
+import JobMetrics, { type Apply } from '../components/JobMetrics'
 import { PRIORITIES, PRIORITY_ORDER, asPriority } from '../components/Priority'
 
 
@@ -21,7 +22,7 @@ export default function Jobs() {
   const exact = sp.get('status') ?? ''   // exact status from a dashboard click, e.g. ?status=Closed
   const [q, setQ] = useState(''); const [status, setStatus] = useState('open')
   const [client, setClient] = useState(''); const [location, setLocation] = useState(''); const [mode, setMode] = useState(''); const [emp, setEmp] = useState('')
-  const [skill, setSkill] = useState(''); const [pipe, setPipe] = useState(''); const [prio, setPrio] = useState(''); const [sort, setSort] = useState<Sort>('updated'); const [more, setMore] = useState(false)
+  const [skill, setSkill] = useState(''); const [pipe, setPipe] = useState(''); const [prio, setPrio] = useState(''); const [metrics, setMetrics] = useState(false); const [sort, setSort] = useState<Sort>('updated'); const [more, setMore] = useState(false)
   const all = jobs.data ?? []
   const opts = useMemo(() => ({ clients: uniq(all.map((j) => j.company_name)), modes: uniq(all.map((j) => j.work_mode)), emps: uniq(all.map((j) => j.employment_type)) }), [all])
   const nOf = (j: (typeof all)[number]) => j.job_candidates?.[0]?.count ?? 0
@@ -56,6 +57,10 @@ export default function Jobs() {
   const activeMore = [client, location, mode, emp, skill, pipe].filter(Boolean).length
   const filtered = !!(q || exact || activeMore || prio)
   const clearAll = () => { setQ(''); setSp({}); setClient(''); setLocation(''); setMode(''); setEmp(''); setSkill(''); setPipe(''); setPrio(''); setStatus('open') }
+  const applyMetric = (a: Apply) => {
+    setQ(''); setSp({}); setClient(a.client ?? ''); setLocation(''); setMode(a.mode ?? ''); setEmp(''); setSkill(''); setPipe(a.pipe ?? ''); setPrio(a.prio ?? '')
+    setStatus(a.status ?? 'all'); setMetrics(false)
+  }
   const pick = (val: string, set: (v: string) => void, label: string, options: string[]) => (
     <select value={val} onChange={(e) => set(e.target.value)} className={cx(sel, val ? 'border-brand-300 bg-brand-50 text-brand-700' : 'border-slate-200 bg-white text-slate-600')}>
       <option value="">{label}: any</option>{options.map((o) => <option key={o} value={o}>{o}</option>)}
@@ -64,7 +69,7 @@ export default function Jobs() {
 
   return (
     <div className="mx-auto max-w-[1700px] px-8 py-7">
-      <PageHeader title="Jobs" subtitle={<><b className="font-semibold text-slate-700">{list.length}</b> {filtered ? 'matching your filters' : 'shown'} · {openN} open · {all.length} total</>} actions={canWrite && <Button onClick={shell.newJob}><Plus className="h-4 w-4" />New job</Button>} />
+      <PageHeader title="Jobs" subtitle={<><b className="font-semibold text-slate-700">{list.length}</b> {filtered ? 'matching your filters' : 'shown'} · {openN} open · {all.length} total</>} actions={<><Button variant="secondary" onClick={() => setMetrics(true)}><BarChart3 className="h-4 w-4" />Metrics</Button>{canWrite && <Button onClick={shell.newJob}><Plus className="h-4 w-4" />New job</Button>}</>} />
 
       <div className="mb-5 rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
         <div className="flex flex-wrap items-center gap-2">
@@ -108,6 +113,7 @@ export default function Jobs() {
           {list.map((j) => <JobCard key={j.id} j={j} stat={stats.data?.get(j.id)} canWrite={canWrite} />)}
         </div>
       )}
+      <Modal open={metrics} onClose={() => setMetrics(false)} title="Job metrics" wide="xl"><JobMetrics all={all} filtered={list} stats={stats.data} filtersOn={filtered} onApply={applyMetric} /></Modal>
     </div>
   )
 }
