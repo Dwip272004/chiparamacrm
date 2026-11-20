@@ -169,6 +169,14 @@ const rpcs: Record<string, (a: any) => any> = {
   enrichment_counts: () => ({ pending: 2, approved: 0, enriched: 1, not_found: 0, rejected: 0, mine_open: 1 }),
   chat_unread: () => 2,
   claim_membership: () => null,
+  job_stats: () => jobs.map((j) => {
+    const rows = jobCands.filter((x) => x.job_id === j.id)
+    return {
+      job_id: j.id, total: rows.length, last_move: rows.map((r) => r.stage_updated_at).sort().pop() ?? null, stale: rows.filter((r) => Date.now() - +new Date(r.stage_updated_at) > 14 * day).length,
+      stages: stages.map((s) => ({ name: s.name, n: rows.filter((r) => r.stage_id === s.id).length })).filter((s) => s.n),
+      people: rows.slice(0, 4).map((r) => ({ id: r.candidate_id, name: candidates.find((c) => c.id === r.candidate_id)!.full_name })),
+    }
+  }).filter((x) => x.total),
   set_job_priority: (a) => { const j = jobs.find((x) => x.id === a.p_id); if (j) j.priority = a.p_priority; return null },
   move_stage: (a) => { const jc = jobCands.find((x) => x.id === a.p_job_candidate); const st = stages.find((s) => s.id === a.p_stage); if (jc && st) { jc.stage_id = st.id; jc.stage_name = st.name; jc.stage_updated_at = new Date().toISOString() } return null },
   set_task_done: (a) => { const t = tasks.find((x) => x.id === a.p_id); if (t) t.status = a.p_done ? 'done' : 'open'; return null },

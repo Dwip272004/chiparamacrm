@@ -57,6 +57,11 @@ export const useBoard = (jobId?: string) => useQuery({
   queryKey: ['board', jobId], enabled: !!jobId,
   queryFn: () => unwrap<BoardRow[]>(supabase.from('job_candidates').select('*, candidates(id,full_name,email,phone,current_position,current_organization,city,state,country,skills,experience_years,rc_updated_at,sync_status,off_limit)').eq('job_id', jobId!).limit(2000)),
 })
+export interface JobStat { job_id: string; total: number; last_move: string | null; stale: number; stages: { name: string; n: number }[]; people: { id: string; name: string }[] }
+export const useJobStats = () => useQuery({
+  queryKey: ['job-stats'], staleTime: 60_000,
+  queryFn: async () => new Map((await unwrap<JobStat[]>(supabase.rpc('job_stats'))).map((s) => [s.job_id, s])),
+})
 export const useMembers = () => useQuery({ queryKey: ['members'], queryFn: () => unwrap<Member[]>(supabase.from('team_members').select('*').order('full_name')), staleTime: 60_000 })
 export const useInsights = () => useQuery({ queryKey: ['insights'], queryFn: () => unwrap<any>(supabase.rpc('dashboard_insights')), staleTime: 5 * 60_000 })
 export const useDashboard = () => useQuery({ queryKey: keys.dash, queryFn: () => unwrap<any>(supabase.rpc('dashboard')), refetchInterval: 60_000 })
@@ -68,7 +73,7 @@ export function useRpc<A extends object>(fn: string, opts: { ok?: string; invali
     mutationFn: (args: A) => unwrap<any>(supabase.rpc(fn, args as never)),
     onSuccess: (r) => {
       opts.ok && toast(opts.ok)
-      ;(opts.invalidate ?? [['cands'], ['cand'], ['cand-assign'], ['board'], ['jobs'], ['job'], ['notes'], ['tasks'], ['dashboard']]).forEach((k) => qc.invalidateQueries({ queryKey: k }))
+      ;(opts.invalidate ?? [['cands'], ['cand'], ['cand-assign'], ['board'], ['jobs'], ['job'], ['notes'], ['tasks'], ['dashboard'], ['job-stats']]).forEach((k) => qc.invalidateQueries({ queryKey: k }))
       opts.onDone?.(r)
     },
     onError: (e: Error) => toast(e.message, 'err'),

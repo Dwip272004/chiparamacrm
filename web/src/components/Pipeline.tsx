@@ -16,7 +16,7 @@ export default function Pipeline({ jobId, stages, rows, loading, canWrite, onOpe
   const [q, setQ] = useState('')
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [dragOver, setDragOver] = useState<string | null>(null)
-  const move = useRpc<{ p_job_candidate: string; p_stage: string }>('move_stage', { invalidate: [['board'], ['cand-assign'], ['dashboard']] })
+  const move = useRpc<{ p_job_candidate: string; p_stage: string }>('move_stage', { invalidate: [['board'], ['cand-assign'], ['dashboard'], ['job-stats']] })
   const order = useMemo(() => new Map(stages.map((s, i) => [s.id, i])), [stages])
   const name = (id: string | null) => stages.find((s) => s.id === id)?.name ?? 'No stage'
 

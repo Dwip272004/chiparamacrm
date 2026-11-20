@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { Briefcase, MapPin, Plus, Search, SlidersHorizontal, Users, X } from 'lucide-react'
-import { useJobs } from '../lib/api'
+import { useSearchParams } from 'react-router-dom'
+import { Briefcase, MapPin, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { useJobs, useJobStats } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { ago, cx, place } from '../lib/util'
-import { Avatar, Badge, Button, Empty, Input, PageHeader, Segmented, Spinner, SyncBadge } from '../components/ui'
+import { cx } from '../lib/util'
+import { Button, Empty, Input, PageHeader, Segmented, Spinner } from '../components/ui'
 import { useShell } from '../components/Shell'
-import { PRIORITIES, PRIORITY_ORDER, PriorityPicker, asPriority } from '../components/Priority'
+import JobCard from '../components/JobCard'
+import { PRIORITIES, PRIORITY_ORDER, asPriority } from '../components/Priority'
 
-const tone = (s?: string | null) => (/open/i.test(s ?? '') ? 'green' : /hold/i.test(s ?? '') ? 'amber' : 'slate') as 'green' | 'amber' | 'slate'
 
 const SORTS = { updated: 'Recently updated', priority: 'Priority (urgent first)', name: 'Title A–Z', pipeline: 'Most candidates', openings: 'Most openings' } as const
 type Sort = keyof typeof SORTS
@@ -16,7 +16,7 @@ const uniq = (xs: (string | null | undefined)[]) => [...new Set(xs.filter((x): x
 const sel = 'h-8 rounded-lg border py-0 pl-3 pr-7 text-[13px] font-medium'
 
 export default function Jobs() {
-  const shell = useShell(); const { canWrite } = useAuth(); const jobs = useJobs()
+  const shell = useShell(); const { canWrite } = useAuth(); const jobs = useJobs(); const stats = useJobStats()
   const [sp, setSp] = useSearchParams()
   const exact = sp.get('status') ?? ''   // exact status from a dashboard click, e.g. ?status=Closed
   const [q, setQ] = useState(''); const [status, setStatus] = useState('open')
@@ -63,7 +63,7 @@ export default function Jobs() {
   )
 
   return (
-    <div className="mx-auto max-w-[1400px] px-8 py-7">
+    <div className="mx-auto max-w-[1700px] px-8 py-7">
       <PageHeader title="Jobs" subtitle={<><b className="font-semibold text-slate-700">{list.length}</b> {filtered ? 'matching your filters' : 'shown'} · {openN} open · {all.length} total</>} actions={canWrite && <Button onClick={shell.newJob}><Plus className="h-4 w-4" />New job</Button>} />
 
       <div className="mb-5 rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
@@ -104,29 +104,8 @@ export default function Jobs() {
       </div>
 
       {jobs.isLoading ? <Spinner /> : !list.length ? <Empty icon={<Briefcase />} title="No jobs match" hint="Try another status or clear some filters." action={filtered ? <Button variant="secondary" size="sm" onClick={clearAll}>Clear all filters</Button> : undefined} /> : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {list.map((j) => {
-            const open = /open/i.test(j.status ?? ''); const n = j.job_candidates?.[0]?.count ?? 0
-            return (
-              <Link key={j.id} to={`/jobs/${j.id}`} className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-pop">
-                <i className={cx('absolute inset-y-0 left-0 w-1', PRIORITIES[asPriority(j.priority)].stripe)} />
-                <div className="flex items-start gap-3">
-                  <Avatar name={j.company_name || j.name} size={10} className="!rounded-xl" />
-                  <div className="min-w-0 flex-1"><div className="truncate font-semibold text-slate-900 group-hover:text-brand-700">{j.name}</div><div className="truncate text-sm text-slate-500">{j.company_name || j.company_rc_id || 'No client'}</div></div>
-                  <div className="flex flex-col items-end gap-1.5"><PriorityPicker jobId={j.id} priority={j.priority} canEdit={canWrite} /><Badge tone={tone(j.status)} dot>{j.status || '—'}</Badge><SyncBadge status={j.sync_status} /></div>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                  <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-slate-400" />{place(j) || 'No location'}</span>
-                  {j.work_mode && <span>{j.work_mode}</span>}{j.employment_type && <span>{j.employment_type}</span>}
-                </div>
-                {!!j.skills.length && <div className="mt-3 flex flex-wrap gap-1">{j.skills.slice(0, 4).map((s) => <Badge key={s}>{s}</Badge>)}{j.skills.length > 4 && <span className="self-center text-xs text-slate-400">+{j.skills.length - 4}</span>}</div>}
-                <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
-                  <span className="inline-flex items-center gap-1.5 font-medium text-slate-700"><Users className="h-3.5 w-3.5 text-slate-400" />{n} in pipeline</span>
-                  <span className="text-slate-400">Updated {ago(j.rc_updated_at ?? j.created_at)}</span>
-                </div>
-              </Link>
-            )
-          })}
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 min-[1750px]:grid-cols-3">
+          {list.map((j) => <JobCard key={j.id} j={j} stat={stats.data?.get(j.id)} canWrite={canWrite} />)}
         </div>
       )}
     </div>
