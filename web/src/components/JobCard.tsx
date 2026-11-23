@@ -2,11 +2,11 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, Briefcase, CalendarClock, GraduationCap, MapPin, Wallet } from 'lucide-react'
 import type { Job } from '../lib/types'
 import type { JobStat } from '../lib/api'
-import { ago, cx, place } from '../lib/util'
+import { ago, cx, isOpenStatus, place } from '../lib/util'
 import { Avatar, Badge, SyncBadge } from './ui'
 import { PRIORITIES, PriorityPicker, asPriority } from './Priority'
 
-const tone = (s?: string | null) => (/open/i.test(s ?? '') ? 'green' : /hold/i.test(s ?? '') ? 'amber' : 'slate') as 'green' | 'amber' | 'slate'
+const tone = (s?: string | null) => (isOpenStatus(s) ? 'green' : /hold|pending/i.test(s ?? '') ? 'amber' : 'slate') as 'green' | 'amber' | 'slate'
 const PALETTE = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316']
 const KNOWN: [RegExp, string][] = [[/appl|new|sourc/i, '#6366f1'], [/screen|shortlist|submit/i, '#0ea5e9'], [/interview/i, '#10b981'], [/offer/i, '#f59e0b'], [/hire|placed|join|onboard/i, '#ec4899'], [/reject|drop|declin/i, '#94a3b8']]
 export const stageColor = (name: string) => KNOWN.find(([r]) => r.test(name))?.[1] ?? PALETTE[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % PALETTE.length]
@@ -21,7 +21,7 @@ function Stat({ n, label, tone: t = 'slate', sub }: { n: number | string; label:
 }
 
 export default function JobCard({ j, stat, canWrite }: { j: Job; stat?: JobStat; canWrite: boolean }) {
-  const open = /open/i.test(j.status ?? '')
+  const open = isOpenStatus(j.status)
   const total = stat?.total ?? 0
   const sum = (re: RegExp) => (stat?.stages ?? []).filter((s) => re.test(s.name)).reduce((a, s) => a + s.n, 0)
   const interviewing = sum(/interview/i), offers = sum(/offer/i), placed = sum(/hire|placed|join|onboard/i)

@@ -9,6 +9,7 @@ export interface Candidate extends CandidateRow {
   first_name: string | null; last_name: string | null; linkedin_url: string | null; notice_period: string | null
   current_salary: number | null; expected_salary: number | null; source: string | null; rc_id: string | null
   raw?: { resume?: { filename: string; file_link: string } | null } | null
+  phone_2?: string | null; phone_3?: string | null; alt_email?: string | null; recruiter_profile_url?: string | null; open_to_work?: boolean | null
 }
 export interface Job {
   id: string; rc_id: string | null; name: string; status: string | null; company_name: string | null; company_rc_id: string | null
@@ -17,6 +18,8 @@ export interface Job {
   min_salary: number | null; max_salary: number | null; skills: string[]; pipeline_id: string | null; sync_status: string
   rc_updated_at: string | null; created_at: string; priority?: 'urgent' | 'high' | 'normal' | 'low'
   job_code?: string | null; open_date?: string | null; rc_created_at?: string | null; currency?: string | null
+  raw_jd?: string | null; intake_note?: string | null; summary?: string | null; responsibilities?: string | null; requirements?: string | null; compensation?: string | null; experience?: string | null
+  pay_rate?: string | null; bill_rate?: string | null; submitted_by_name?: string | null; reviewed_by_name?: string | null; origin?: string | null
 }
 export interface Stage { id: string; pipeline_id: string; name: string; sort_order: number; rc_stage_id: string }
 export interface JobCandidate {

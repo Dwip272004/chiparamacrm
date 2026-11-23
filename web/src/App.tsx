@@ -7,6 +7,8 @@ import Candidates from './pages/Candidates'
 import Jobs from './pages/Jobs'
 import JobDetail from './pages/JobDetail'
 import Tasks from './pages/Tasks'
+import Calling from './pages/Calling'
+import CallProfile from './pages/CallProfile'
 import Enrichment from './pages/Enrichment'
 import Chat from './pages/Chat'
 import Team from './pages/Team'
@@ -36,6 +38,8 @@ export default function App() {
         <Route path="jobs" element={<Jobs />} />
         <Route path="jobs/:id" element={<JobDetail />} />
         <Route path="tasks" element={<Tasks />} />
+        <Route path="calling" element={<Calling />} />
+        <Route path="calling/:id" element={<CallProfile />} />
         <Route path="enrichment" element={<Enrichment />} />
         <Route path="chat" element={<Chat />} />
         <Route path="team" element={<Team />} />

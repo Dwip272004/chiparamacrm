@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Briefcase, MapPin, Pencil, Plus, Users, Wallet } from 'lucide-react'
 import { useBoard, useJob, useStages } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { cx, money, place } from '../lib/util'
+import { cx, isOpenStatus, money, place } from '../lib/util'
 import { Avatar, Badge, Button, Card, Modal, Spinner, SyncBadge } from '../components/ui'
 import Pipeline from '../components/Pipeline'
 import { useShell } from '../components/Shell'
@@ -11,21 +11,23 @@ import { AddCandidatesModal } from '../components/AssignModal'
 import { NotesTab, TasksTab } from '../components/CandidateDrawer'
 import JobForm from '../components/JobForm'
 import { RichText } from '../components/Rich'
+import JobCalling from '../components/JobCalling'
+import ReviewJob from '../components/ReviewJob'
 import { PriorityPicker } from '../components/Priority'
 
 const STAGE_COLORS = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f97316']
 
 export default function JobDetail() {
-  const { id } = useParams(); const shell = useShell(); const { canWrite } = useAuth()
+  const { id } = useParams(); const shell = useShell(); const { canWrite, isAdmin } = useAuth()
   const job = useJob(id); const stages = useStages(job.data?.pipeline_id); const board = useBoard(id)
   const [add, setAdd] = useState(false); const [edit, setEdit] = useState(false)
-  const [tab, setTab] = useState<'pipeline' | 'details' | 'notes' | 'tasks'>('pipeline')
+  const [tab, setTab] = useState<'pipeline' | 'details' | 'calling' | 'notes' | 'tasks'>('pipeline')
   const dist = useMemo(() => (stages.data ?? []).map((s, i) => ({ name: s.name, n: (board.data ?? []).filter((r) => r.stage_id === s.id).length, color: STAGE_COLORS[i % STAGE_COLORS.length] })), [stages.data, board.data])
 
   if (job.isLoading) return <Spinner />
   const j = job.data; if (!j) return <div className="p-10 text-center text-slate-500">Job not found.</div>
   const total = board.data?.length ?? 0
-  const open = /open/i.test(j.status ?? '')
+  const open = isOpenStatus(j.status)
 
   return (
     <div className="flex h-full flex-col">
@@ -45,7 +47,7 @@ export default function JobDetail() {
               </div>
             </div>
           </div>
-          {canWrite && <div className="flex shrink-0 gap-2"><Button variant="secondary" onClick={() => setEdit(true)}><Pencil className="h-3.5 w-3.5" />Edit</Button><Button onClick={() => setAdd(true)}><Plus className="h-4 w-4" />Add candidates</Button></div>}
+          {canWrite && <div className="flex shrink-0 gap-2">{isAdmin && /pending/i.test(j.status ?? '') ? <Button onClick={() => setEdit(true)}>Review &amp; publish</Button> : <Button variant="secondary" onClick={() => setEdit(true)}><Pencil className="h-3.5 w-3.5" />Edit</Button>}<Button onClick={() => setAdd(true)}><Plus className="h-4 w-4" />Add candidates</Button></div>}
         </div>
 
         {total > 0 && (
@@ -59,7 +61,7 @@ export default function JobDetail() {
         )}
 
         <div className="mt-4 flex gap-1">
-          {(['pipeline', 'details', 'notes', 'tasks'] as const).map((t) => (
+          {(['pipeline', 'details', ...(isAdmin ? ['calling' as const] : []), 'notes', 'tasks'] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={cx('border-b-2 px-3.5 py-2.5 text-sm font-medium capitalize transition', tab === t ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800')}>{t}{t === 'pipeline' && total > 0 && <span className="ml-1.5 rounded-full bg-slate-100 px-1.5 text-[10px] text-slate-600">{total}</span>}</button>))}
         </div>
       </div>
@@ -69,19 +71,22 @@ export default function JobDetail() {
         <div className="min-h-0 flex-1 overflow-auto scroll-thin p-8">
           <div className="mx-auto max-w-4xl">
             {tab === 'details' && (
+              <>
+              {j.raw_jd && <Card className="mb-4 p-6"><div className="mb-2 flex items-center justify-between"><div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Submitted JD{j.submitted_by_name ? ` · ${j.submitted_by_name}` : ''}</div></div>{j.intake_note && <div className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{j.intake_note}</div>}<div className="max-h-72 overflow-auto whitespace-pre-wrap text-sm text-slate-700">{j.raw_jd}</div></Card>}
               <Card className="p-6">
                 {!!j.skills.length && <div className="mb-5"><div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Required skills</div><div className="flex flex-wrap gap-1.5">{j.skills.map((s) => <Badge key={s} tone="brand">{s}</Badge>)}</div></div>}
                 <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Description</div>
                 <RichText html={j.description} empty="No description." />
-              </Card>
+              </Card></>
             )}
+            {tab === 'calling' && isAdmin && <JobCalling jobId={j.id} />}
             {tab === 'notes' && <NotesTab jobId={j.id} />}
             {tab === 'tasks' && <TasksTab jobId={j.id} />}
           </div>
         </div>
       )}
       {add && <AddCandidatesModal jobId={j.id} onClose={() => setAdd(false)} />}
-      <Modal open={edit} onClose={() => setEdit(false)} title="Edit job" wide><JobForm initial={j} onDone={() => setEdit(false)} /></Modal>
+      <Modal open={edit} onClose={() => setEdit(false)} title={/pending/i.test(j.status ?? '') ? 'Review job' : 'Edit job'} wide={j.origin === 'calling' ? 'xl' : true}>{j.origin === 'calling' && isAdmin ? <ReviewJob job={j} onDone={() => setEdit(false)} /> : <JobForm initial={j} onDone={() => setEdit(false)} />}</Modal>
     </div>
   )
 }

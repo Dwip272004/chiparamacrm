@@ -127,3 +127,30 @@ export const useChat = (candidate?: string | null) => useQuery({
   },
 })
 export const useChatUnread = () => useQuery({ queryKey: ['chat-unread'], queryFn: () => unwrap<number>(supabase.rpc('chat_unread')), refetchInterval: 120_000 })
+
+// ---------- Calling (merged from the calling software) ----------
+import type { CallRow, OutreachActivity } from './calling'
+const CALL_SELECT = '*, job_candidates(id,job_id,candidate_id,stage_name,candidates(*),jobs(id,job_code,name,company_name,city,country,work_mode,employment_type,experience,compensation,openings,skills,summary,responsibilities,requirements,description)), candidate_batches(id,tag)'
+async function fetchAllRows<T>(build: () => { range: (a: number, b: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }> }): Promise<T[]> {
+  const size = 1000; let from = 0; let all: T[] = []
+  for (;;) {
+    const { data, error } = await build().range(from, from + size - 1)
+    if (error) throw new Error(error.message)
+    all = all.concat(data ?? [])
+    if ((data ?? []).length < size) return all
+    from += size
+  }
+}
+/** Everything assigned for calling that you're allowed to see (callers: their own; admins: all). */
+export const useCallList = () => useQuery({
+  queryKey: ['call-list'], staleTime: 30_000,
+  queryFn: () => fetchAllRows<CallRow>(() => supabase.from('outreach').select(CALL_SELECT).not('call_assigned_to', 'is', null).order('created_at', { ascending: false }).order('job_candidate_id') as never),
+})
+export const useCallers = (enabled = true) => useQuery({
+  queryKey: ['callers'], enabled, staleTime: 60_000,
+  queryFn: () => unwrap<Member[]>(supabase.from('team_members').select('*').in('role', ['manager', 'recruiter']).eq('is_active', true).order('full_name')),
+})
+export const useOutreachActivity = (id?: string) => useQuery({
+  queryKey: ['outreach-activity', id], enabled: !!id,
+  queryFn: () => unwrap<OutreachActivity[]>(supabase.from('outreach_activity').select('*').eq('job_candidate_id', id!).order('created_at', { ascending: false }).limit(50)),
+})

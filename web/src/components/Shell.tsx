@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
-import { Briefcase, CheckSquare, CloudUpload, LayoutDashboard, LogOut, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, Sparkles, Sun, Users, UserCog, ChevronsUpDown } from 'lucide-react'
+import { Briefcase, CheckSquare, Phone, CloudUpload, LayoutDashboard, LogOut, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, Sparkles, Sun, Users, UserCog, ChevronsUpDown } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useCandidateSearch, useJobs, useDashboard, useChatUnread, useEnrichmentCounts } from '../lib/api'
 import NotificationBell, { useRealtime } from './NotificationBell'
@@ -20,6 +20,7 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true, key: 'd' },
   { to: '/candidates', label: 'Candidates', icon: Users, key: 'c' },
   { to: '/jobs', label: 'Jobs', icon: Briefcase, key: 'j' },
+  { to: '/calling', label: 'Calling', icon: Phone, key: 'p' },
   { to: '/tasks', label: 'Tasks', icon: CheckSquare, key: 't' },
   { to: '/enrichment', label: 'Enrichment', icon: Sparkles, key: 'e' },
   { to: '/chat', label: 'Team chat', icon: MessageSquare, key: 'm' },
@@ -102,8 +103,8 @@ export default function Shell() {
             {!collapsed && <button onClick={() => setCollapsed(true)} title="Collapse sidebar" className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><PanelLeftClose className="h-4 w-4" /></button>}
           </div>
           <nav className={cx('flex-1 overflow-y-auto scroll-thin px-3 pb-3 pt-2', collapsed && 'px-2')}>
-            <Group title="Workspace">{nav.slice(0, 4).map(item)}</Group>
-            <Group title="Collaborate">{nav.slice(4).map(item)}</Group>
+            <Group title="Workspace">{nav.slice(0, 5).map(item)}</Group>
+            <Group title="Collaborate">{nav.slice(5).map(item)}</Group>
             {isManager && <Group title="Admin"><NavItem to="/team" label="Team" icon={UserCog} /><NavItem to="/sync" label="Sync status" icon={RefreshCw} count={pending} /></Group>}
           </nav>
           {collapsed && <button onClick={() => setCollapsed(false)} title="Expand sidebar" className="mx-auto mb-2 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><PanelLeftOpen className="h-4 w-4" /></button>}

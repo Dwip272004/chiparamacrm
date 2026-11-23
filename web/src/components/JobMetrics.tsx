@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { AlertTriangle, ArrowUpRight, Briefcase, CheckCircle2, Target, TrendingUp, Users } from 'lucide-react'
 import type { Job } from '../lib/types'
 import type { JobStat } from '../lib/api'
-import { cx } from '../lib/util'
+import { cx, isOpenStatus } from '../lib/util'
 import { Badge, Segmented } from './ui'
 import { stageColor } from './JobCard'
 import { PRIORITY_ORDER, PriorityBadge, asPriority } from './Priority'
@@ -11,7 +11,7 @@ import { PRIORITY_ORDER, PriorityBadge, asPriority } from './Priority'
 type J = Job & { job_candidates?: { count: number }[] }
 export interface Apply { prio?: string; pipe?: string; mode?: string; client?: string; status?: string }
 
-const isOpen = (j: J) => /open/i.test(j.status ?? '')
+const isOpen = (j: J) => isOpenStatus(j.status)
 const daysSince = (d?: string | null) => (d ? Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 86400_000)) : null)
 const PLACED = /hire|placed|join|onboard/i
 const PRIO_COLOR: Record<string, string> = { urgent: '#ef4444', high: '#f97316', normal: '#38bdf8', low: '#94a3b8' }

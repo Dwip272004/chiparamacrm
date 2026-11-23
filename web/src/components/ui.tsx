@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { createContext, type ComponentProps, useCallback, useContext, useEffect, useRef, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { AlertCircle, BadgeCheck, Check, Loader2, X } from 'lucide-react'
 import { cx } from '../lib/util'
 
@@ -22,7 +22,7 @@ export function Button({ variant = 'primary', size = 'md', loading, className, c
 
 const field = 'w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-[0_1px_2px_rgb(16_24_40/.04)] transition placeholder:text-slate-400 hover:border-slate-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/10 disabled:bg-slate-100 disabled:text-slate-500'
 export const Input = ({ className, ...p }: InputHTMLAttributes<HTMLInputElement>) => <input {...p} className={cx(field, 'h-9', className)} />
-export const Textarea = ({ className, ...p }: TextareaHTMLAttributes<HTMLTextAreaElement>) => <textarea {...p} className={cx(field, 'py-2 leading-relaxed', className)} />
+export const Textarea = ({ className, ...p }: ComponentProps<'textarea'>) => <textarea {...p} className={cx(field, 'py-2 leading-relaxed', className)} />
 export const Select = ({ className, ...p }: SelectHTMLAttributes<HTMLSelectElement>) => <select {...p} className={cx(field, 'h-9 pr-8', className)} />
 export const Label = ({ children, hint }: { children: ReactNode; hint?: string }) => (
   <label className="mb-1.5 block text-xs font-medium text-slate-700">{children}{hint && <span className="ml-1 font-normal text-slate-400">{hint}</span>}</label>

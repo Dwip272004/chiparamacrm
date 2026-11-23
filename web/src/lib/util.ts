@@ -18,3 +18,7 @@ export function useDebounced<T>(v: T, ms = 250): T {
   useEffect(() => { const t = setTimeout(() => setX(v), ms); return () => clearTimeout(t) }, [v, ms])
   return x
 }
+
+// "Open" jobs include ones the calling software marks Active; Pending Review jobs are waiting for an admin.
+export const isOpenStatus = (s?: string | null) => /^(open|active)$/i.test((s ?? '').trim())
+export const isPendingStatus = (s?: string | null) => /pending/i.test(s ?? '')

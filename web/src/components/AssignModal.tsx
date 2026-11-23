@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Search } from 'lucide-react'
 import { useCandidateSearch, useJobs, useRpc } from '../lib/api'
-import { useDebounced, place } from '../lib/util'
+import { useDebounced, place, isOpenStatus } from '../lib/util'
 import { Badge, Button, Input, Modal, Spinner } from './ui'
 
 // Add candidates TO a job (pick candidates) - used on the job board.
@@ -34,7 +34,7 @@ export function AddCandidatesModal({ jobId, onClose }: { jobId: string; onClose:
 export function PickJobModal({ candidateIds, onClose, onDone }: { candidateIds: string[]; onClose: () => void; onDone?: () => void }) {
   const jobs = useJobs(); const [q, setQ] = useState('')
   const assign = useRpc<{ p_job: string; p_candidates: string[] }>('assign_candidates', { ok: 'Added to pipeline', onDone: () => { onDone?.(); onClose() } })
-  const list = (jobs.data ?? []).filter((j) => /open/i.test(j.status ?? 'open') && j.name.toLowerCase().includes(q.toLowerCase()))
+  const list = (jobs.data ?? []).filter((j) => isOpenStatus(j.status ?? 'open') && j.name.toLowerCase().includes(q.toLowerCase()))
   return (
     <Modal open onClose={onClose} title={`Add ${candidateIds.length} candidate${candidateIds.length > 1 ? 's' : ''} to a job`}>
       <Input autoFocus placeholder="Filter open jobs…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-3" />

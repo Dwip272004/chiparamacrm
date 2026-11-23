@@ -3,10 +3,11 @@ import { useSearchParams } from 'react-router-dom'
 import { BarChart3, Briefcase, MapPin, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
 import { useJobs, useJobStats } from '../lib/api'
 import { useAuth } from '../lib/auth'
-import { cx } from '../lib/util'
+import { cx, isOpenStatus, isPendingStatus } from '../lib/util'
 import { Button, Empty, Input, Modal, PageHeader, Segmented, Spinner } from '../components/ui'
 import { useShell } from '../components/Shell'
 import JobCard from '../components/JobCard'
+import SubmitJD from '../components/SubmitJD'
 import JobMetrics, { type Apply } from '../components/JobMetrics'
 import { PRIORITIES, PRIORITY_ORDER, asPriority } from '../components/Priority'
 
@@ -22,7 +23,7 @@ export default function Jobs() {
   const exact = sp.get('status') ?? ''   // exact status from a dashboard click, e.g. ?status=Closed
   const [q, setQ] = useState(''); const [status, setStatus] = useState('open')
   const [client, setClient] = useState(''); const [location, setLocation] = useState(''); const [mode, setMode] = useState(''); const [emp, setEmp] = useState('')
-  const [skill, setSkill] = useState(''); const [pipe, setPipe] = useState(''); const [prio, setPrio] = useState(''); const [metrics, setMetrics] = useState(false); const [sort, setSort] = useState<Sort>('updated'); const [more, setMore] = useState(false)
+  const [skill, setSkill] = useState(''); const [pipe, setPipe] = useState(''); const [prio, setPrio] = useState(''); const [metrics, setMetrics] = useState(false); const [jd, setJd] = useState(false); const [sort, setSort] = useState<Sort>('updated'); const [more, setMore] = useState(false)
   const all = jobs.data ?? []
   const opts = useMemo(() => ({ clients: uniq(all.map((j) => j.company_name)), modes: uniq(all.map((j) => j.work_mode)), emps: uniq(all.map((j) => j.employment_type)) }), [all])
   const nOf = (j: (typeof all)[number]) => j.job_candidates?.[0]?.count ?? 0
@@ -30,8 +31,8 @@ export default function Jobs() {
   const { pre, list } = useMemo(() => {
     const t = q.trim().toLowerCase(); const loc = location.trim().toLowerCase(); const skills = skill.split(',').map((x) => x.trim().toLowerCase()).filter(Boolean)
     const out = all.filter((j) => {
-      const isOpen = /open/i.test(j.status ?? '')
-      if (exact ? (j.status ?? 'Unknown').toLowerCase() !== exact.toLowerCase() : !(status === 'all' || (status === 'open' ? isOpen : !isOpen))) return false
+      const isOpen = isOpenStatus(j.status); const isPending = isPendingStatus(j.status)
+      if (exact ? (j.status ?? 'Unknown').toLowerCase() !== exact.toLowerCase() : !(status === 'all' || (status === 'open' ? isOpen : status === 'pending' ? isPending : !isOpen && !isPending))) return false
       if (t && ![j.name, j.company_name, j.city].join(' ').toLowerCase().includes(t)) return false
       if (client && j.company_name !== client) return false
       if (mode && j.work_mode !== mode) return false
@@ -53,7 +54,7 @@ export default function Jobs() {
     return { pre: sorted, list: prio ? sorted.filter((j) => asPriority(j.priority) === prio) : sorted }
   }, [all, q, status, exact, client, location, mode, emp, skill, pipe, sort, prio])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  const openN = all.filter((j) => /open/i.test(j.status ?? '')).length
+  const openN = all.filter((j) => isOpenStatus(j.status)).length; const pendingN = all.filter((j) => isPendingStatus(j.status)).length
   const activeMore = [client, location, mode, emp, skill, pipe].filter(Boolean).length
   const filtered = !!(q || exact || activeMore || prio)
   const clearAll = () => { setQ(''); setSp({}); setClient(''); setLocation(''); setMode(''); setEmp(''); setSkill(''); setPipe(''); setPrio(''); setStatus('open') }
@@ -69,12 +70,12 @@ export default function Jobs() {
 
   return (
     <div className="mx-auto max-w-[1700px] px-8 py-7">
-      <PageHeader title="Jobs" subtitle={<><b className="font-semibold text-slate-700">{list.length}</b> {filtered ? 'matching your filters' : 'shown'} · {openN} open · {all.length} total</>} actions={<><Button variant="secondary" onClick={() => setMetrics(true)}><BarChart3 className="h-4 w-4" />Metrics</Button>{canWrite && <Button onClick={shell.newJob}><Plus className="h-4 w-4" />New job</Button>}</>} />
+      <PageHeader title="Jobs" subtitle={<><b className="font-semibold text-slate-700">{list.length}</b> {filtered ? 'matching your filters' : 'shown'} · {openN} open · {all.length} total</>} actions={<><Button variant="secondary" onClick={() => setMetrics(true)}><BarChart3 className="h-4 w-4" />Metrics</Button>{canWrite && <Button variant="secondary" onClick={() => setJd(true)}>Submit a JD</Button>}{canWrite && <Button onClick={shell.newJob}><Plus className="h-4 w-4" />New job</Button>}</>} />
 
       <div className="mb-5 rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[260px] flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input data-search className="h-10 pl-9" placeholder="Search title, client or city…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-          <Segmented value={exact ? ('' as never) : (status as 'open')} onChange={(v) => { setSp({}); setStatus(v) }} options={[{ value: 'open', label: 'Open', count: openN }, { value: 'closed', label: 'Closed', count: all.length - openN }, { value: 'all', label: 'All', count: all.length }]} />
+          <Segmented value={exact ? ('' as never) : (status as 'open')} onChange={(v) => { setSp({}); setStatus(v) }} options={[{ value: 'open', label: 'Open', count: openN }, ...(pendingN ? [{ value: 'pending', label: 'Pending review', count: pendingN }] : []), { value: 'closed', label: 'Closed', count: all.length - openN - pendingN }, { value: 'all', label: 'All', count: all.length }]} />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
           <span className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Priority</span>
@@ -113,6 +114,7 @@ export default function Jobs() {
           {list.map((j) => <JobCard key={j.id} j={j} stat={stats.data?.get(j.id)} canWrite={canWrite} />)}
         </div>
       )}
+      <Modal open={jd} onClose={() => setJd(false)} title="Submit a job description" wide><SubmitJD onDone={() => setJd(false)} /></Modal>
       <Modal open={metrics} onClose={() => setMetrics(false)} title="Job metrics" wide="xl"><JobMetrics all={all} filtered={list} stats={stats.data} filtersOn={filtered} onApply={applyMetric} /></Modal>
     </div>
   )

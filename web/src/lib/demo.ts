@@ -54,7 +54,7 @@ const jobs: any[] = [
   ['DevOps Engineer', 'Cloudnine', 'Bengaluru', 'Open', ['Kubernetes', 'Terraform']], ['Verilog RTL Designer', 'Quanta Works', 'San Jose', 'Open', ['Verilog', 'UVM']],
   ['Marketing Manager', 'Orbit', 'Delhi', 'Closed', ['SEO', 'Branding']], ['HR Business Partner', 'Marigold', 'Ahmedabad', 'Closed', ['HRIS']], ['Frontend Engineer', 'Helio Systems', 'Pune', 'Open', ['React', 'TypeScript']],
 ].map(([name, company, city, status, skills], i) => ({
-  id: uid('j', i + 1), rc_id: `J${i}`, name, status, company_name: company, company_rc_id: null, city, state: null, country: city === 'San Jose' ? 'United States' : 'India',
+  id: uid('j', i + 1), rc_id: `J${i}`, job_code: `CHP-${1001 + i}`, name, status, company_name: company, company_rc_id: null, city, state: null, country: city === 'San Jose' ? 'United States' : 'India',
   description: `<p>We are looking for a <b>${name}</b> to join ${company}.</p><ul><li>Own delivery end-to-end</li><li>Work with a friendly cross-functional team</li><li>Grow into a lead role</li></ul>`,
   work_mode: pick(['Hybrid', 'Onsite', 'Remote']), employment_type: 'Full time', openings: 1 + (i % 3), min_experience: 3, max_experience: 9, min_salary: 1500000, max_salary: 3000000,
   skills, pipeline_id: pipeline, priority: ['urgent', 'high', 'normal', 'normal', 'high', 'low', 'normal', 'low', 'normal'][i], sync_status: 'synced', rc_updated_at: iso(i * 2 * day), created_at: iso(i * 5 * day), rc_created_at: iso(i * 5 * day),
@@ -81,7 +81,17 @@ const notifs: any[] = [
   { id: uid('x', 1), kind: 'enrichment_done', title: 'Enriched: ' + candidates[4].full_name, body: 'Contact details were added to the candidate.', link: '/enrichment', candidate_id: candidates[4].id, is_read: false, created_at: iso(3600_000) },
   { id: uid('x', 2), kind: 'enrichment_requested', title: 'Enrichment requested: ' + candidates[3].full_name, body: 'Sana Qureshi needs email & phone', link: '/enrichment', candidate_id: candidates[3].id, is_read: true, created_at: iso(6 * 3600_000) },
 ]
+const CALLS = ['not_called', 'not_called', 'no_answer', 'call_back_later', 'connected_interested', 'voicemail', 'not_called', 'busy', 'connected_not_interested', 'not_called']
+const outreach: any[] = jobCands.slice(0, 30).map((jc, i) => ({
+  job_candidate_id: jc.id, batch_id: i % 2 ? 'b-1' : 'b-2', rcs_status: 'not_started', email_status: i % 5 === 0 ? 'sent' : 'not_started', linkedin_status: 'not_started',
+  call_status: CALLS[i % CALLS.length], call_assigned_to: i % 7 === 6 ? 'u-sana' : ME, call_attempts: CALLS[i % CALLS.length] === 'not_called' ? 0 : 1 + (i % 3),
+  last_called_at: CALLS[i % CALLS.length] === 'not_called' ? null : iso((i % 6) * 3600_000), call_notes: i % 4 === 0 ? 'Asked to call after 6pm.' : null, interview_at: null, created_at: iso(i * 3600_000), updated_at: iso(i * 3600_000),
+}))
+const outreachActivity: any[] = outreach.filter((o) => o.call_status !== 'not_called').map((o, i) => ({ id: uid('oa', i + 1), job_candidate_id: o.job_candidate_id, channel: 'call', from_status: 'not_called', to_status: o.call_status, note: i % 2 ? 'Left a message, will retry tomorrow.' : null, actor_name: 'Dwip Lahare', created_at: o.last_called_at }))
+const candidate_batches: any[] = [{ id: 'b-1', job_id: jobs[0].id, tag: 'LinkedIn Recruiter – Nov batch 1', source: 'LinkedIn Recruiter', created_by_name: 'Dwip Lahare', created_at: iso(5 * day) }, { id: 'b-2', job_id: jobs[0].id, tag: 'Referrals', source: 'Team referrals', created_by_name: 'Prashant', created_at: iso(2 * day) }]
+const job_statuses = ['Pending Review', 'Open', 'Active', 'On Hold', 'Filled', 'Closed', 'Cancelled'].map((label, i) => ({ key: label.toLowerCase().replace(/ /g, '_'), label, color: 'gray', sort_order: i * 10, is_active: true }))
 const tables: Record<string, any[]> = {
+  candidate_batches, job_statuses, outreach, outreach_activity: outreachActivity,
   team_members: team, candidates, jobs, job_candidates: jobCands, pipeline_stages: stages, tasks, notes, chat_messages: chat, enrichment_requests: enrich, enrichment_events: [], notifications: notifs,
   team_invites: [], sync_state: [{ entity: 'candidates', last_synced_at: iso(8 * 60_000), last_status: 'ok' }, { entity: 'jobs', last_synced_at: iso(9 * 60_000), last_status: 'ok' }], sync_runs: [], sync_outbox: [],
 }
@@ -96,6 +106,8 @@ class Q {
   in(c: string, v: any[]) { this.ops.push((r) => r.filter((x) => v.includes(x[c]))); return this }
   match(o: Record<string, any>) { Object.entries(o).forEach(([k, v]) => this.eq(k, v)); return this }
   order(c: string, o: any = {}) { const asc = o.ascending !== false; this.ops.push((r) => [...r].sort((a, b) => { const x = a[c], y = b[c]; if (x == null) return o.nullsFirst ? -1 : 1; if (y == null) return o.nullsFirst ? 1 : -1; return (x > y ? 1 : x < y ? -1 : 0) * (asc ? 1 : -1) })); return this }
+  not(c: string, _op: string, v: any) { this.ops.push((r) => r.filter((x) => (v === null ? x[c] !== null : x[c] !== v))); return this }
+  range(a: number, b: number) { this.ops.push((r) => r.slice(a, b + 1)); return this }
   limit(n: number) { this.ops.push((r) => r.slice(0, n)); return this }
   single() { this.one = 'single'; return this }
   maybeSingle() { this.one = 'maybe'; return this }
@@ -110,9 +122,16 @@ class Q {
   }
   private expand(r: any) {
     const out = { ...r }
+    if (this.table === 'outreach') {
+      const jc = jobCands.find((x) => x.id === r.job_candidate_id)
+      out.job_candidates = jc ? { id: jc.id, job_id: jc.job_id, candidate_id: jc.candidate_id, stage_name: jc.stage_name, candidates: candidates.find((c) => c.id === jc.candidate_id), jobs: jobs.find((j) => j.id === jc.job_id) ? { ...jobs.find((j) => j.id === jc.job_id), experience: '5-9 years', compensation: '15-30 LPA', summary: 'Own delivery end to end in a friendly team.', responsibilities: null, requirements: 'Strong fundamentals, good communication.' } : null } : null
+      out.candidate_batches = { id: r.batch_id, tag: r.batch_id === 'b-1' ? 'Lot A' : 'Lot B' }
+      return out
+    }
     for (const m of this.sel.matchAll(/(\w+)\(([^)]*)\)/g)) {
       const [, rel, inner] = m
       if (rel === 'job_candidates' && inner.trim() === 'count') out.job_candidates = [{ count: jobCands.filter((x) => x.job_id === r.id).length }]
+      else if (rel === 'outreach' && inner.trim() === 'count') out.outreach = [{ count: outreach.filter((o) => o.batch_id === r.id).length }]
       else if (rel === 'candidates') out.candidates = candidates.find((c) => c.id === r.candidate_id) ?? r.candidates
       else if (rel === 'jobs') out.jobs = jobs.find((j) => j.id === r.job_id)
     }
@@ -177,6 +196,10 @@ const rpcs: Record<string, (a: any) => any> = {
       people: rows.slice(0, 4).map((r) => ({ id: r.candidate_id, name: candidates.find((c) => c.id === r.candidate_id)!.full_name })),
     }
   }).filter((x) => x.total),
+  job_calling_summary: () => ({ total: 46, in_scope: 30, unassigned: 7, uncalled: 21, callers: team.filter((m) => m.role !== 'admin').map((m, i) => ({ id: m.user_id, name: m.full_name, assigned: 12 + i * 5, not_called: 6 + i * 2 })) }),
+  assign_job_calling: () => ({ assigned: 7, per_caller: [] }),
+  submit_jd: () => jobs[0].id,
+  review_job: () => null,
   set_job_priority: (a) => { const j = jobs.find((x) => x.id === a.p_id); if (j) j.priority = a.p_priority; return null },
   move_stage: (a) => { const jc = jobCands.find((x) => x.id === a.p_job_candidate); const st = stages.find((s) => s.id === a.p_stage); if (jc && st) { jc.stage_id = st.id; jc.stage_name = st.name; jc.stage_updated_at = new Date().toISOString() } return null },
   set_task_done: (a) => { const t = tasks.find((x) => x.id === a.p_id); if (t) t.status = a.p_done ? 'done' : 'open'; return null },
