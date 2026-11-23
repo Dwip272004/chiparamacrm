@@ -57,6 +57,9 @@ export function sortForCalling(a: CallRow, b: CallRow) {
   if (d) return d
   return (a.last_called_at ? +new Date(a.last_called_at) : 0) - (b.last_called_at ? +new Date(b.last_called_at) : 0)
 }
+// Shared pool: anyone can open a free candidate; the first caller to open one claims it.
+export type Claim = 'free' | 'mine' | 'taken'
+export const claimOf = (r: Pick<CallRow, 'call_assigned_to'>, me?: string): Claim => (!r.call_assigned_to ? 'free' : r.call_assigned_to === me ? 'mine' : 'taken')
 export const fmtDateTime = (d?: string | null) => (d ? new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—')
 
 /* ---------- CSV / pasted-table parsing for lot uploads ---------- */

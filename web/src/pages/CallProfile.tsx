@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, Copy, ExternalLink, Mail, MapPin, Phone, PartyPopper } from 'lucide-react'
-import { useCallList, useOutreachActivity } from '../lib/api'
+import { ArrowLeft, ArrowRight, Copy, ExternalLink, Lock, Mail, MapPin, Phone, PartyPopper } from 'lucide-react'
+import { useCallList, useMembers, useOutreachActivity } from '../lib/api'
+import { useAuth } from '../lib/auth'
 import { supabase, unwrap } from '../lib/supabase'
-import { CALL_OUTCOMES, CHANNELS, callBucket, fmtDateTime, sortForCalling, statusMeta, type CallRow } from '../lib/calling'
+import { CALL_OUTCOMES, CHANNELS, callBucket, claimOf, fmtDateTime, sortForCalling, statusMeta, type CallRow } from '../lib/calling'
 import { cx } from '../lib/util'
 import { Avatar, Badge, Button, Card, Empty, Spinner, Textarea, useToast } from '../components/ui'
 import { RichText } from '../components/Rich'
@@ -23,15 +24,16 @@ export default function CallProfile() {
   const { id = '' } = useParams(); const [sp] = useSearchParams(); const navigate = useNavigate()
   const job = sp.get('job') ?? ''; const lot = sp.get('lot') ?? ''
   const qs = [job && `job=${job}`, lot && `lot=${lot}`].filter(Boolean).join('&')
-  const list = useCallList()
+  const list = useCallList(); const { isAdmin, member } = useAuth(); const me = member?.user_id
   const rows = list.data
+  const available = (r: CallRow) => isAdmin || claimOf(r, me) !== 'taken'   // callers can only work free candidates and their own
   const [queue, setQueue] = useState<string[]>([]); const [handled, setHandled] = useState<Set<string>>(new Set()); const snap = useRef(false)
 
   // snapshot the queue once, so the order doesn't jump while you're calling
   useEffect(() => {
     if (!rows || snap.current) return
     snap.current = true
-    setQueue(rows.filter((r) => callBucket(r) !== 'done' && (!job || r.job_candidates.job_id === job) && (!lot || r.batch_id === lot)).sort(sortForCalling).map((r) => r.job_candidate_id))
+    setQueue(rows.filter((r) => callBucket(r) !== 'done' && available(r) && (!job || r.job_candidates.job_id === job) && (!lot || r.batch_id === lot)).sort(sortForCalling).map((r) => r.job_candidate_id))
   }, [rows, job, lot])
 
   const row = rows?.find((r) => r.job_candidate_id === id)
@@ -39,11 +41,11 @@ export default function CallProfile() {
   const go = useCallback((to: string) => navigate(`/calling/${to}${qs ? `?${qs}` : ''}`), [navigate, qs])
   const nextId = useMemo(() => {
     if (!rows) return null
-    for (let i = pos >= 0 ? pos + 1 : 0; i < queue.length; i++) { const r = rows.find((x) => x.job_candidate_id === queue[i]); if (r && !handled.has(r.job_candidate_id) && callBucket(r) !== 'done') return r.job_candidate_id }
+    for (let i = pos >= 0 ? pos + 1 : 0; i < queue.length; i++) { const r = rows.find((x) => x.job_candidate_id === queue[i]); if (r && !handled.has(r.job_candidate_id) && callBucket(r) !== 'done' && available(r)) return r.job_candidate_id }
     return null
   }, [rows, queue, pos, handled])
   const prevId = pos > 0 ? queue[pos - 1] : null
-  const upNext = useMemo(() => (rows ? queue.slice(Math.max(pos, -1) + 1).map((q) => rows.find((r) => r.job_candidate_id === q)).filter((r): r is CallRow => !!r && !handled.has(r.job_candidate_id) && callBucket(r) !== 'done').slice(0, 4) : []), [rows, queue, pos, handled])
+  const upNext = useMemo(() => (rows ? queue.slice(Math.max(pos, -1) + 1).map((q) => rows.find((r) => r.job_candidate_id === q)).filter((r): r is CallRow => !!r && !handled.has(r.job_candidate_id) && callBucket(r) !== 'done' && available(r)).slice(0, 4) : []), [rows, queue, pos, handled])
 
   if (list.isLoading || !rows) return <Spinner />
   if (!row) return <Card className="m-8"><Empty icon={<Phone />} title="This candidate isn't in your list" action={<Link to="/calling" className="text-sm font-medium text-brand-600 hover:underline">Back to calling list</Link>} /></Card>
@@ -54,9 +56,21 @@ function Profile({ row, pos, total, upNext, nextId, prevId, onGo, onSaved }: { r
   const c = row.job_candidates.candidates; const job = row.job_candidates.jobs
   const [status, setStatus] = useState(row.call_status === 'not_called' ? '' : row.call_status); const [note, setNote] = useState(''); const [error, setError] = useState('')
   const [finished, setFinished] = useState(false)
+  const { isAdmin, member } = useAuth(); const members = useMembers(); const me = member?.user_id
+  const [claimed, setClaimed] = useState<{ status: string; by?: string } | null>(null)
+  const takenByOther = !isAdmin && row.call_assigned_to && row.call_assigned_to !== me
+  const ownerName = (id: string | null) => members.data?.find((m) => m.user_id === id)?.full_name ?? 'a teammate'
   const noteRef = useRef<HTMLTextAreaElement>(null); const qc = useQueryClient(); const toast = useToast()
   const activity = useOutreachActivity(row.job_candidate_id)
   const log = useMutation({ mutationFn: (a: { status: string; note: string }) => unwrap(supabase.rpc('log_call', { p_id: row.job_candidate_id, p_status: a.status, p_note: a.note || null })) })
+
+  // opening a free candidate claims them for you; if someone got there first you'll see who
+  useEffect(() => {
+    if (isAdmin || !me || row.call_assigned_to === me || row.call_assigned_to) return
+    let live = true
+    void unwrap<{ status: string; by?: string }>(supabase.rpc('claim_call', { p_id: row.job_candidate_id })).then((r) => { if (!live) return; setClaimed(r); void qc.invalidateQueries({ queryKey: ['call-list'] }) }).catch((e: Error) => { if (live) toast(e.message, 'err') })
+    return () => { live = false }
+  }, [isAdmin, me, row.call_assigned_to, row.job_candidate_id, qc, toast])
 
   const save = useCallback(async (andNext: boolean) => {
     if (log.isPending) return
@@ -82,6 +96,14 @@ function Profile({ row, pos, total, upNext, nextId, prevId, onGo, onSaved }: { r
     window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h)
   }, [save])
 
+  const takenName = takenByOther ? ownerName(row.call_assigned_to) : claimed?.status === 'taken' ? claimed.by ?? 'a teammate' : null
+  if (takenName) return (
+    <div className="mx-auto max-w-xl px-8 py-16"><Card className="p-8 text-center">
+      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"><Lock className="h-7 w-7" /></div>
+      <h2 className="text-lg font-semibold text-slate-900">{takenName} already has {c.full_name}</h2>
+      <p className="mt-1 text-sm text-slate-500">Whoever opens a candidate first is the one who calls them, so this one isn’t yours to call.</p>
+      <div className="mt-5 flex justify-center gap-2"><Link to="/calling" className="inline-flex h-9 items-center rounded-lg border border-slate-200 px-4 text-sm font-medium text-slate-700 hover:bg-slate-50">Back to calling list</Link>{nextId && <Button onClick={() => onGo(nextId)}>Next candidate<ArrowRight className="h-4 w-4" /></Button>}</div>
+    </Card></div>)
   if (finished) return <Card className="m-8"><Empty icon={<PartyPopper />} title="You're all caught up" hint="No more candidates in this queue right now." action={<Link to="/calling" className="text-sm font-medium text-brand-600 hover:underline">Back to calling list</Link>} /></Card>
   const phones = [c.phone, c.phone_2, c.phone_3].filter((p): p is string => !!p)
   const roleSections: [string, string | null, boolean][] = [['Summary', job?.summary ?? null, true], ['Responsibilities', job?.responsibilities ?? null, false], ['Requirements', job?.requirements ?? null, true]]
@@ -156,7 +178,7 @@ function Profile({ row, pos, total, upNext, nextId, prevId, onGo, onSaved }: { r
               <ul className="space-y-3">
                 {activity.data.map((a) => (
                   <li key={a.id} className="border-l-2 border-slate-200 pl-4">
-                    <div className="text-sm text-slate-800">{a.channel === 'interview' ? (a.to_status ? `Interview set for ${fmtDateTime(a.to_status)}` : 'Interview time cleared') : a.channel === 'assignment' ? 'Assigned for calling' : <><span className="text-xs capitalize text-slate-400">{a.channel === 'call' ? 'Call' : a.channel}: </span><Badge tone={statusMeta(a.channel === 'call' ? 'call' : 'msg', a.to_status)?.tone ?? 'slate'}>{statusMeta(a.channel === 'call' ? 'call' : 'msg', a.to_status)?.label ?? a.to_status}</Badge></>}</div>
+                    <div className="text-sm text-slate-800">{a.channel === 'interview' ? (a.to_status ? `Interview set for ${fmtDateTime(a.to_status)}` : 'Interview time cleared') : a.channel === 'assignment' ? (a.from_status ? 'Reassigned' : `Picked up by ${a.actor_name ?? 'a caller'}`) : <><span className="text-xs capitalize text-slate-400">{a.channel === 'call' ? 'Call' : a.channel}: </span><Badge tone={statusMeta(a.channel === 'call' ? 'call' : 'msg', a.to_status)?.tone ?? 'slate'}>{statusMeta(a.channel === 'call' ? 'call' : 'msg', a.to_status)?.label ?? a.to_status}</Badge></>}</div>
                     {a.note && <div className="mt-1 whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{a.note}</div>}
                     <div className="mt-1 text-xs text-slate-400">{a.actor_name ?? 'System'} · {fmtDateTime(a.created_at)}</div>
                   </li>))}

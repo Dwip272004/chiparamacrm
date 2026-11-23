@@ -141,10 +141,10 @@ async function fetchAllRows<T>(build: () => { range: (a: number, b: number) => P
     from += size
   }
 }
-/** Everything assigned for calling that you're allowed to see (callers: their own; admins: all). */
+/** The shared calling pool: every candidate on a calling list (callers and admins all see it; claimed ones show who has them). */
 export const useCallList = () => useQuery({
   queryKey: ['call-list'], staleTime: 30_000,
-  queryFn: () => fetchAllRows<CallRow>(() => supabase.from('outreach').select(CALL_SELECT).not('call_assigned_to', 'is', null).order('created_at', { ascending: false }).order('job_candidate_id') as never),
+  queryFn: () => fetchAllRows<CallRow>(() => supabase.from('outreach').select(CALL_SELECT).order('created_at', { ascending: false }).order('job_candidate_id') as never),
 })
 export const useCallers = (enabled = true) => useQuery({
   queryKey: ['callers'], enabled, staleTime: 60_000,

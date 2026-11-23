@@ -21,7 +21,7 @@ Rule for the data move: **copy, never move.** The old `public.*` tables stay unt
 
 ## Access rules (enforced in the database)
 - Admins (`crm.is_super()`) see and manage every calling row.
-- Callers only see outreach rows assigned to them, and can only log calls on those.
+- Shared pool: every caller (manager/recruiter) sees the whole calling list. The first caller to open a candidate claims them (`claim_call`, atomic); nobody else can open or call that person, and the list shows who has them. Admins can open anything and never claim by viewing. Candidates already assigned in the old calling app stay with their callers.
 - All writes go through functions; there are no direct write policies.
 
 ## Decisions taken (change any of them)

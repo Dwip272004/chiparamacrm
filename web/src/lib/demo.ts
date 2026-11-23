@@ -23,6 +23,7 @@ const team = [
   { user_id: 'u-dev', email: 'dev@demo.test', full_name: 'Dev Malhotra', role: 'recruiter', is_active: true },
 ]
 
+if (typeof location !== 'undefined' && location.search.includes('as=caller')) team[0].role = 'manager'   // preview the caller experience
 const candidates: any[] = Array.from({ length: 64 }, (_, i) => {
   const [position, skills] = pick(ROLES as unknown as [string, string[]][])
   const [city, country] = pick(CITIES as unknown as [string, string][])
@@ -84,7 +85,7 @@ const notifs: any[] = [
 const CALLS = ['not_called', 'not_called', 'no_answer', 'call_back_later', 'connected_interested', 'voicemail', 'not_called', 'busy', 'connected_not_interested', 'not_called']
 const outreach: any[] = jobCands.slice(0, 30).map((jc, i) => ({
   job_candidate_id: jc.id, batch_id: i % 2 ? 'b-1' : 'b-2', rcs_status: 'not_started', email_status: i % 5 === 0 ? 'sent' : 'not_started', linkedin_status: 'not_started',
-  call_status: CALLS[i % CALLS.length], call_assigned_to: i % 7 === 6 ? 'u-sana' : ME, call_attempts: CALLS[i % CALLS.length] === 'not_called' ? 0 : 1 + (i % 3),
+  call_status: CALLS[i % CALLS.length], call_assigned_to: i % 3 === 1 ? null : i % 3 === 2 ? (i % 2 ? 'u-sana' : 'u-rohan') : ME, call_attempts: CALLS[i % CALLS.length] === 'not_called' ? 0 : 1 + (i % 3),
   last_called_at: CALLS[i % CALLS.length] === 'not_called' ? null : iso((i % 6) * 3600_000), call_notes: i % 4 === 0 ? 'Asked to call after 6pm.' : null, interview_at: null, created_at: iso(i * 3600_000), updated_at: iso(i * 3600_000),
 }))
 const outreachActivity: any[] = outreach.filter((o) => o.call_status !== 'not_called').map((o, i) => ({ id: uid('oa', i + 1), job_candidate_id: o.job_candidate_id, channel: 'call', from_status: 'not_called', to_status: o.call_status, note: i % 2 ? 'Left a message, will retry tomorrow.' : null, actor_name: 'Dwip Lahare', created_at: o.last_called_at }))
@@ -200,6 +201,7 @@ const rpcs: Record<string, (a: any) => any> = {
   assign_job_calling: () => ({ assigned: 7, per_caller: [] }),
   submit_jd: () => jobs[0].id,
   review_job: () => null,
+  claim_call: (a) => { const o = outreach.find((x) => x.job_candidate_id === a.p_id); if (!o) return { status: 'taken', by: '?' }; if (team[0].role === 'admin') return { status: 'admin' }; if (!o.call_assigned_to) { o.call_assigned_to = ME; return { status: 'claimed' } } return o.call_assigned_to === ME ? { status: 'mine' } : { status: 'taken', by: team.find((m) => m.user_id === o.call_assigned_to)?.full_name } },
   set_job_priority: (a) => { const j = jobs.find((x) => x.id === a.p_id); if (j) j.priority = a.p_priority; return null },
   move_stage: (a) => { const jc = jobCands.find((x) => x.id === a.p_job_candidate); const st = stages.find((s) => s.id === a.p_stage); if (jc && st) { jc.stage_id = st.id; jc.stage_name = st.name; jc.stage_updated_at = new Date().toISOString() } return null },
   set_task_done: (a) => { const t = tasks.find((x) => x.id === a.p_id); if (t) t.status = a.p_done ? 'done' : 'open'; return null },
