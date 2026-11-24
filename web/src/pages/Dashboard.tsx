@@ -102,7 +102,7 @@ const ListRow = ({ to, onClick, title, sub, right }: { to?: string; onClick?: ()
 }
 
 export default function Dashboard() {
-  const { member, canWrite } = useAuth(); const shell = useShell()
+  const { member, canWrite, isAdmin } = useAuth(); const shell = useShell()
   const d = useDashboard(); const ins = useInsights(); const mine = useTasks('mine', undefined, member?.user_id)
   const done = useRpc<{ p_id: string; p_done: boolean }>('set_task_done', { invalidate: [['tasks'], ['dashboard']] })
   if (d.isLoading) return <Spinner />
@@ -189,11 +189,11 @@ export default function Dashboard() {
         </Panel>
       </div>
 
-      <Panel title="Recent team activity" right={<span className="inline-flex items-center gap-1 text-xs text-slate-400"><Clock className="h-3 w-3" />{s.last_sync ? `RecruitCRM last synced ${ago(s.last_sync)}` : 'RecruitCRM sync not run yet'}</span>}>
+      {isAdmin && <Panel title="Recent team activity" right={<span className="inline-flex items-center gap-1 text-xs text-slate-400"><Clock className="h-3 w-3" />{s.last_sync ? `RecruitCRM last synced ${ago(s.last_sync)}` : 'RecruitCRM sync not run yet'}</span>}>
         {s.recent?.map((a: any) => (
           <div key={a.id} className="flex items-center gap-3 border-b border-slate-100 py-2.5 text-sm last:border-0"><Avatar name={a.actor_name || 'S'} size={7} /><div className="min-w-0 flex-1 truncate text-slate-500"><b className="font-medium text-slate-800">{a.actor_name || 'Someone'}</b> {label(a)}</div><span className="text-xs text-slate-400">{ago(a.created_at)}</span></div>))}
         {!s.recent?.length && <div className="py-4 text-center text-sm text-slate-400">Activity from your team will show up here.</div>}
-      </Panel>
+      </Panel>}
     </div>
   )
 }
