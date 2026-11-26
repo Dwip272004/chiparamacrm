@@ -150,6 +150,7 @@ function search(a: any) {
     const hay = [c.full_name, c.email, c.current_position, c.current_organization, c.city, ...c.skills].join(' ').toLowerCase()
     if (!q.every((t: string) => hay.includes(t))) return false
     if (!csv(a.p_city).every((t) => [c.city, c.state, c.country].join(' ').toLowerCase().includes(t))) return false
+    if (a.p_skill_bool?.length && !a.p_skill_bool.some((cl: any) => cl.p.every((x: string) => c.skills.some((s: string) => s.toLowerCase().includes(x.replace(/\\/g, '')))) && !cl.n.some((x: string) => c.skills.some((s: string) => s.toLowerCase().includes(x.replace(/\\/g, '')))))) return false
     if (!csv(a.p_skill).every((t) => c.skills.some((s: string) => s.toLowerCase().includes(t)))) return false
     const e = !!c.email, p = !!c.phone
     if (a.p_contact === 'verified' && !(e && p)) return false

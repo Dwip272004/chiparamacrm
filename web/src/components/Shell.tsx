@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom'
-import { Briefcase, CheckSquare, Phone, CloudUpload, LayoutDashboard, LogOut, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, Sparkles, Sun, Users, UserCog, ChevronsUpDown } from 'lucide-react'
+import { Briefcase, CheckSquare, Phone, CloudUpload, LayoutDashboard, LogOut, MessageSquare, Moon, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, Search, Sparkles, Sun, Users, UserCog, ChevronsUpDown, FileSignature } from 'lucide-react'
 import { useAuth } from '../lib/auth'
 import { useCandidateSearch, useJobs, useDashboard, useChatUnread, useEnrichmentCounts } from '../lib/api'
 import NotificationBell, { useRealtime } from './NotificationBell'
@@ -105,6 +105,7 @@ export default function Shell() {
           <nav className={cx('flex-1 overflow-y-auto scroll-thin px-3 pb-3 pt-2', collapsed && 'px-2')}>
             <Group title="Workspace">{nav.slice(0, 5).map(item)}</Group>
             <Group title="Collaborate">{nav.slice(5).map(item)}</Group>
+            <Group title="Submissions"><NavItem to="/submissions/broadcom" label="Broadcom submission" icon={FileSignature} /><NavItem to="/submissions/rivian" label="Rivian submission" icon={FileSignature} /></Group>
             {isManager && <Group title="Admin"><NavItem to="/team" label="Team" icon={UserCog} /><NavItem to="/sync" label="Sync status" icon={RefreshCw} count={pending} /></Group>}
           </nav>
           {collapsed && <button onClick={() => setCollapsed(false)} title="Expand sidebar" className="mx-auto mb-2 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"><PanelLeftOpen className="h-4 w-4" /></button>}

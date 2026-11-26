@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "sync": "node --env-file=../.env.local src/cli.js sync",
     "sync:full": "node --env-file=../.env.local src/cli.js sync --full",
@@ -11,6 +13,12 @@
     "outbox:live": "node --env-file=../.env.local src/cli.js outbox --live",
     "export:linkedin": "node --env-file=../.env.local src/export-linkedin.js",
     "skills:search": "node --env-file=../.env.local src/skills-backfill.js search",
-    "skills:apply": "node --env-file=../.env.local src/skills-backfill.js apply"
+    "skills:apply": "node --env-file=../.env.local src/skills-backfill.js apply",
+    "skills:resume": "node --env-file=../.env.local src/resume-skills.js run",
+    "skills:resume:apply": "node --env-file=../.env.local src/resume-skills.js apply"
+  },
+  "dependencies": {
+    "mammoth": "^1.13.0",
+    "unpdf": "^1.9.1"
   }
 }

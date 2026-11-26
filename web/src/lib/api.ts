@@ -7,12 +7,13 @@ export const keys = {
   dash: ['dashboard'], cands: ['cands'], cand: (id: string) => ['cand', id], jobs: ['jobs'], job: (id: string) => ['job', id],
 }
 
+import { compileSkillQuery } from './boolean'
 export interface SearchArgs { q?: string; city?: string; skill?: string; excludeJob?: string; limit?: number; offset?: number; contact?: string; hasSkills?: string; hasResume?: string; hasLinkedin?: string; hasEmail?: string; hasPhone?: string; stage?: string; place?: string; skillExact?: string }
 export function useCandidateSearch(a: SearchArgs, enabled = true) {
   return useQuery({
     queryKey: [...keys.cands, a], enabled, placeholderData: (p) => p,
     queryFn: async () => unwrap<{ total: number; rows: CandidateRow[] }>(supabase.rpc('search_candidates', {
-      p_q: a.q || null, p_city: a.city || null, p_skill: a.skill || null, p_exclude_job: a.excludeJob || null, p_limit: a.limit ?? 50, p_offset: a.offset ?? 0,
+      p_q: a.q || null, p_city: a.city || null, p_skill_bool: compileSkillQuery(a.skill), p_exclude_job: a.excludeJob || null, p_limit: a.limit ?? 50, p_offset: a.offset ?? 0,
       p_contact: a.contact || null, p_has_skills: a.hasSkills || null, p_has_resume: a.hasResume || null, p_has_linkedin: a.hasLinkedin || null, p_has_email: a.hasEmail || null, p_has_phone: a.hasPhone || null,
       p_stage: a.stage || null, p_place: a.place || null, p_skill_exact: a.skillExact || null,
     })),

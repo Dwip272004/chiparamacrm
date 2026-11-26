@@ -57,7 +57,7 @@ export default function Candidates() {
             <Input data-search autoFocus className="h-10 pl-9 pr-16" placeholder="Search name, email, phone, title, company, skill…" value={q} onChange={(e) => setQ(e.target.value)} />
             {q ? <button onClick={() => setQ('')} className="absolute right-2.5 top-2.5 rounded p-0.5 text-slate-400 hover:text-slate-700"><X className="h-4 w-4" /></button> : <kbd className="absolute right-3 top-2.5">/</kbd>}</div>
           <div className="relative w-52"><MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input className="h-10 pl-9" placeholder="Location" title="Several locations separated by commas: must match all" value={city} onChange={(e) => setCity(e.target.value)} /></div>
-          <Input className="!h-10 !w-52" placeholder="Skills (a, b = both)" title="Separate several skills with commas: candidates must have all of them" value={skill} onChange={(e) => setSkill(e.target.value)} />
+          <Input className="!h-10 !w-52" placeholder="Skills (python AND uvm)" title={'Boolean search: AND, OR, NOT, ( ) and "quoted phrases"\nExample: verilog AND (uvm OR "system verilog") NOT matlab\nA comma also means AND.'} value={skill} onChange={(e) => setSkill(e.target.value)} />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <div className="flex gap-0.5 rounded-lg bg-slate-100 p-0.5">
