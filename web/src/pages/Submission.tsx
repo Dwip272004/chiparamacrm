@@ -41,7 +41,8 @@ export default function Submission() {
       <Card className="p-5">
         <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold text-slate-900">Resume template</h3>
           <p className="mt-0.5 text-xs text-slate-500">Editable Word file in the Chiparama format. Fill it in, then File → Save as PDF and name it Name_Chiparama.</p></div>
-          <a href={e.docx} download><Button><Download className="h-4 w-4" /> Download .docx</Button></a></div>
+          <div className="flex gap-2"><a href="/templates/chiparama-logo.png" download><Button variant="secondary"><Download className="h-4 w-4" /> Logo</Button></a>
+            <a href={e.docx} download><Button><Download className="h-4 w-4" /> Download .docx</Button></a></div></div>
       </Card>
     </div>
   )
